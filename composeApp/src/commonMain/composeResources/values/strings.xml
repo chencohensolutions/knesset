@@ -238,4 +238,5 @@
     <string name="video_failed">לא ניתן לנגן את הסרטון באפליקציה.</string>
     <string name="watch">צפייה בישיבה</string>
     <string name="plenum_videos">סרטוני ערוץ הכנסת</string>
+    <string name="empty_hint">אפשר לשנות את החיפוש או את הסינון, או לבחור כנסת אחרת.</string>
 </resources>

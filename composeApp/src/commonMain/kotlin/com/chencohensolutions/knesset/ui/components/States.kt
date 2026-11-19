@@ -52,51 +52,29 @@ fun errorText(error: KnessetError): String = when (error) {
 }
 
 @Composable
-fun ErrorState(error: KnessetError, onRetry: (() -> Unit)?, modifier: Modifier = Modifier.fillMaxSize()) {
-    Column(
-        modifier.padding(24.dp).semantics { liveRegion = LiveRegionMode.Polite },
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(
-            if (error is KnessetError.Offline) Icons.Outlined.CloudOff else Icons.Outlined.ErrorOutline,
-            contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error,
-        )
-        Spacer(Modifier.height(12.dp))
-        Text(errorText(error), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-        if (onRetry != null) {
-            Spacer(Modifier.height(16.dp))
-            FilledTonalButton(onClick = onRetry) { Text(stringResource(Res.string.retry)) }
-        }
-    }
-}
+fun ErrorState(error: KnessetError, onRetry: (() -> Unit)?, modifier: Modifier = Modifier.fillMaxSize()) =
+    ErrorIllustration(error, onRetry, modifier.semantics { liveRegion = LiveRegionMode.Polite })
 
 @Composable
-fun EmptyState(modifier: Modifier = Modifier.fillMaxSize()) {
-    Column(modifier.padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(Icons.Outlined.SearchOff, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.outline)
-        Spacer(Modifier.height(12.dp))
-        Text(stringResource(Res.string.empty), style = MaterialTheme.typography.bodyLarge)
-    }
-}
+fun EmptyState(modifier: Modifier = Modifier.fillMaxSize()) = EmptyIllustration(modifier)
 
+/** First loads show skeleton cards with real row heights; spinners are only for paging. */
 @Composable
 fun LoadingState(modifier: Modifier = Modifier.fillMaxSize()) {
-    Box(modifier, contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+    Box(modifier) { SkeletonList() }
 }
 
 @Composable
 fun OfflineBanner(modifier: Modifier = Modifier) {
+    val c = com.chencohensolutions.knesset.ui.theme.AppTheme.colors
     Row(
-        modifier.fillMaxWidth().background(MaterialTheme.colorScheme.tertiaryContainer).padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
+            .background(c.caution.copy(alpha = 0.16f), com.chencohensolutions.knesset.ui.theme.Radius.pill)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icon(Icons.Outlined.CloudOff, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onTertiaryContainer)
-        Text(
-            stringResource(Res.string.offline_banner),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onTertiaryContainer,
-        )
+        Icon(Icons.Outlined.CloudOff, null, Modifier.size(16.dp), tint = c.caution)
+        Text(stringResource(Res.string.offline_banner), style = MaterialTheme.typography.labelMedium, color = c.textPrimary)
     }
 }

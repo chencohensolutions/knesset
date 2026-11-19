@@ -1,44 +1,51 @@
 package com.chencohensolutions.knesset.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.chencohensolutions.knesset.core.platform.UrlOpener
 import com.chencohensolutions.knesset.domain.Doc
-import com.chencohensolutions.knesset.domain.StatusStyles
-import com.chencohensolutions.knesset.domain.StatusTone
+import com.chencohensolutions.knesset.ui.BillRoute
+import com.chencohensolutions.knesset.ui.CommitteeRoute
+import com.chencohensolutions.knesset.ui.CommitteeSessionRoute
+import com.chencohensolutions.knesset.ui.ExplorerItemRoute
+import com.chencohensolutions.knesset.ui.FactionRoute
+import com.chencohensolutions.knesset.ui.Kind
+import com.chencohensolutions.knesset.ui.LawRoute
 import com.chencohensolutions.knesset.ui.LocalNav
-import com.chencohensolutions.knesset.ui.theme.Semantic
+import com.chencohensolutions.knesset.ui.MemberRoute
+import com.chencohensolutions.knesset.ui.MinistryRoute
+import com.chencohensolutions.knesset.ui.MotionRoute
+import com.chencohensolutions.knesset.ui.QuestionRoute
+import com.chencohensolutions.knesset.ui.SecondaryLawRoute
+import com.chencohensolutions.knesset.ui.SittingRoute
+import com.chencohensolutions.knesset.ui.VoteRoute
+import com.chencohensolutions.knesset.ui.theme.AppTheme
+import com.chencohensolutions.knesset.ui.theme.Radius
+import com.chencohensolutions.knesset.ui.theme.Section
+import com.chencohensolutions.knesset.ui.theme.Space
 import org.koin.compose.koinInject
 
 /** Hebrew data text: direction follows the content, aligned to start (plan 2.9). */
@@ -57,46 +64,35 @@ fun DataText(
 }
 
 @Composable
-fun StatusChip(text: String?) {
-    if (text.isNullOrBlank()) return
-    val color = when (StatusStyles.tone(text)) {
-        StatusTone.PASSED -> Semantic.positive
-        StatusTone.STOPPED -> Semantic.negative
-        StatusTone.IN_PROGRESS -> Semantic.progress
-        StatusTone.NEUTRAL -> Semantic.neutral
-    }
-    Surface(shape = RoundedCornerShape(6.dp), color = color.copy(alpha = 0.14f)) {
-        Text(
-            text, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.labelMedium.copy(textDirection = TextDirection.Content),
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-        )
-    }
-}
+fun StatusChip(text: String?) = StatusPill(text)
 
 @Composable
-fun InitialsAvatar(initials: String, modifier: Modifier = Modifier) {
-    Box(
-        modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(initials, color = MaterialTheme.colorScheme.onPrimaryContainer, style = MaterialTheme.typography.titleSmall)
-    }
+fun InitialsAvatar(initials: String, modifier: Modifier = Modifier, factionId: Int? = null) {
+    Box(modifier) { Avatar(initials, factionId) }
 }
 
-/** A thin for/against bar. */
-@Composable
-fun VoteBar(forCount: Int, againstCount: Int, abstain: Int = 0, modifier: Modifier = Modifier) {
-    val total = forCount + againstCount + abstain
-    if (total == 0) return
-    Row(modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))) {
-        if (forCount > 0) Box(Modifier.weight(forCount.toFloat()).height(6.dp).background(Semantic.positive))
-        if (againstCount > 0) Box(Modifier.weight(againstCount.toFloat()).height(6.dp).background(Semantic.negative))
-        if (abstain > 0) Box(Modifier.weight(abstain.toFloat()).height(6.dp).background(Semantic.neutral))
-    }
+/** Which kind of item a route opens, for the icon and hue of a row. */
+fun kindOfRoute(route: Any?): Kind? = when (route) {
+    is BillRoute -> Kind.BILL
+    is LawRoute -> Kind.LAW
+    is SecondaryLawRoute -> Kind.SECONDARY_LAW
+    is VoteRoute -> Kind.VOTE
+    is SittingRoute -> Kind.SITTING
+    is MotionRoute -> Kind.MOTION
+    is QuestionRoute -> Kind.QUESTION
+    is CommitteeRoute -> Kind.COMMITTEE
+    is CommitteeSessionRoute -> Kind.COMMITTEE_SESSION
+    is MemberRoute -> Kind.MEMBER
+    is FactionRoute -> Kind.FACTION
+    is MinistryRoute -> Kind.MINISTRY
+    is ExplorerItemRoute -> null
+    else -> null
 }
 
-/** The one row pattern used by lists and detail sections. */
+/**
+ * The one row pattern (docs 3.7). With [card] it stands alone on its own white card (lists); without it,
+ * it sits inside a section card. No chevrons and no dividers: the whole row is the touch target.
+ */
 @Composable
 fun ItemRow(
     title: String,
@@ -109,57 +105,78 @@ fun ItemRow(
     trailing: (@Composable () -> Unit)? = null,
     below: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
+    kind: Kind? = kindOfRoute(route),
+    factionId: Int? = null,
+    card: Boolean = false,
+    showIcon: Boolean = true,
 ) {
     val nav = LocalNav.current
     val opener = koinInject<UrlOpener>()
+    val c = AppTheme.colors
     val click: (() -> Unit)? = when {
         onClick != null -> onClick
         route != null -> { { nav.navigate(route) } }
         url != null -> { { opener.open(url) } }
         else -> null
     }
-    Row(
-        Modifier.fillMaxWidth()
-            .let { if (click != null) it.clickable(role = Role.Button, onClick = click) else it }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        if (initials != null) InitialsAvatar(initials)
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            DataText(title, maxLines = 3, style = MaterialTheme.typography.bodyLarge)
-            if (status != null || date != null || subtitle != null) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-                    StatusChip(status)
-                    if (date != null) Text(date, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (subtitle != null) DataText(subtitle, style = MaterialTheme.typography.bodySmall, maxLines = 2, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+    val section = if (kind != null) Section.of(kind) else AppTheme.section
+    val body: @Composable () -> Unit = {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = if (card) Space.l else Space.m, vertical = Space.m),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(Space.m),
+        ) {
+            when {
+                initials != null -> Avatar(initials, factionId)
+                showIcon && kind != null -> IconTile(kindIcon(kind), section)
             }
-            below?.invoke()
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                DataText(title, maxLines = 3, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium), color = c.textPrimary)
+                if (status != null || date != null || subtitle != null) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                        StatusPill(status)
+                        if (date != null) Text(date, style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
+                        if (subtitle != null) DataText(subtitle, style = MaterialTheme.typography.bodySmall, maxLines = 2, color = c.textSecondary)
+                    }
+                }
+                below?.invoke()
+            }
+            when {
+                trailing != null -> trailing()
+                url != null && route == null && onClick == null -> Icon(Icons.Outlined.OpenInNew, null, Modifier.size(18.dp), tint = c.textSecondary)
+            }
         }
-        when {
-            trailing != null -> trailing()
-            url != null && route == null -> Icon(Icons.Outlined.OpenInNew, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
-            click != null -> Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.outline)
-        }
+    }
+    if (card) {
+        AppCard(Modifier.fillMaxWidth().padding(horizontal = Space.gutter), click) { body() }
+    } else {
+        Box(Modifier.fillMaxWidth().clip(Radius.tile).pressableRow(click)) { body() }
     }
 }
 
 @Composable
+private fun Modifier.pressableRow(onClick: (() -> Unit)?): Modifier =
+    if (onClick == null) this else this.then(Modifier.pressable(onClick))
+
+/** A document tile with a colored format badge (docs 3.17). */
+@Composable
 fun DocumentRow(doc: Doc) {
     val opener = koinInject<UrlOpener>()
+    val c = AppTheme.colors
+    val badge = when (doc.format) {
+        "PDF" -> c.negative
+        "DOC", "DOCX" -> Section.LEGISLATION.accentLight
+        else -> c.neutral
+    }
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button) { opener.open(doc.url) }.padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().clip(Radius.tile).pressable { opener.open(doc.url) }.padding(horizontal = Space.m, vertical = Space.m),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Space.m),
     ) {
-        Icon(Icons.Outlined.Description, null, tint = MaterialTheme.colorScheme.primary)
-        DataText(doc.name ?: doc.meaning ?: doc.url.substringAfterLast('/'), Modifier.weight(1f), maxLines = 2)
-        if (doc.format != null) {
-            Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
-                Text(doc.format, Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall)
-            }
+        Box(Modifier.clip(Radius.tile).background(badge.copy(alpha = 0.14f)).padding(horizontal = 8.dp, vertical = 10.dp)) {
+            Text(doc.format ?: "FILE", color = badge, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
         }
-        Box(Modifier.width(0.dp))
+        DataText(doc.name ?: doc.meaning ?: doc.url.substringAfterLast('/'), Modifier.weight(1f), maxLines = 2)
+        Icon(Icons.Outlined.OpenInNew, null, Modifier.size(18.dp), tint = c.textSecondary)
     }
 }

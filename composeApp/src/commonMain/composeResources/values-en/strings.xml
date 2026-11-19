@@ -238,4 +238,5 @@
     <string name="video_failed">The video cannot play in the app.</string>
     <string name="watch">Watch the session</string>
     <string name="plenum_videos">Knesset Channel videos</string>
+    <string name="empty_hint">Try another search, other filters or another Knesset.</string>
 </resources>
