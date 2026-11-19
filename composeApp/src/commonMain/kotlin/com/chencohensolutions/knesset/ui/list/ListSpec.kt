@@ -18,6 +18,8 @@ data class ListRow(
     val bar: Triple<Int, Int, Int>? = null,
     val route: Any? = null,
     val url: String? = null,
+    /** Rows with a group label get a header whenever the label changes (the calendar's days). */
+    val group: String? = null,
 )
 
 data class Option(val value: String, val label: String)

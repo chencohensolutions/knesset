@@ -181,4 +181,20 @@
     <string name="f_submitted">הוגשה</string>
     <string name="f_reply_planned">מועד תשובה מתוכנן</string>
     <string name="f_replied">נענתה</string>
+    <string name="filter_main_committees">ועדות ראשיות</string>
+    <string name="filter_committee_type">סוג ועדה</string>
+    <string name="section_committees">ועדות</string>
+    <string name="section_calendar">יומן ישיבות</string>
+    <string name="f_category">קטגוריה</string>
+    <string name="f_committee_kind">סוג</string>
+    <string name="f_parent_committee">ועדת אם</string>
+    <string name="former_members">חברים לשעבר</string>
+    <string name="joint_committees">ועדות משותפות</string>
+    <string name="upcoming_sessions">ישיבות קרובות</string>
+    <string name="past_sessions">ישיבות קודמות</string>
+    <string name="f_location">מיקום</string>
+    <string name="f_status">סטטוס</string>
+    <string name="f_note">הערה</string>
+    <string name="session_page">דף הישיבה באתר</string>
+    <string name="broadcast">שידור</string>
 </resources>

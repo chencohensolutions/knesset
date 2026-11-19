@@ -181,4 +181,20 @@
     <string name="f_submitted">Submitted</string>
     <string name="f_reply_planned">Planned reply</string>
     <string name="f_replied">Replied</string>
+    <string name="filter_main_committees">Main committees</string>
+    <string name="filter_committee_type">Committee type</string>
+    <string name="section_committees">Committees</string>
+    <string name="section_calendar">Session calendar</string>
+    <string name="f_category">Category</string>
+    <string name="f_committee_kind">Kind</string>
+    <string name="f_parent_committee">Parent committee</string>
+    <string name="former_members">Former members</string>
+    <string name="joint_committees">Joint committees</string>
+    <string name="upcoming_sessions">Upcoming sessions</string>
+    <string name="past_sessions">Past sessions</string>
+    <string name="f_location">Location</string>
+    <string name="f_status">Status</string>
+    <string name="f_note">Note</string>
+    <string name="session_page">Session page</string>
+    <string name="broadcast">Broadcast</string>
 </resources>

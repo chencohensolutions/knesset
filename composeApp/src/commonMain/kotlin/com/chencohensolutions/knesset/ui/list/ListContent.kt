@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -121,7 +125,14 @@ fun ListContent(vm: ListViewModel<*>, modifier: Modifier = Modifier, header: (@C
                 state.isEmpty -> EmptyState()
                 else -> LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
                     if (header != null) item { header() }
-                    items(state.items, key = { it.id.toString() + (it.route?.toString() ?: "") }) { row ->
+                    itemsIndexed(state.items, key = { _, it -> it.id.toString() + (it.route?.toString() ?: "") }) { index, row ->
+                        if (row.group != null && row.group != state.items.getOrNull(index - 1)?.group) {
+                            Text(
+                                row.group,
+                                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp, vertical = 6.dp).semantics { heading() },
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                        }
                         ItemRow(
                             title = row.title, subtitle = row.subtitle, status = row.status, date = row.date,
                             initials = row.initials, route = row.route, url = row.url,
