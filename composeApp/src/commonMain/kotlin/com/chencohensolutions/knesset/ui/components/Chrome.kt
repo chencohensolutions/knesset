@@ -97,7 +97,7 @@ fun GradientHeader(
 ) {
     val collapsed = scrollBehavior.state.collapsedFraction > 0.5f
     CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides Color.White) {
-        Box(Modifier.background(sectionGradient(section))) {
+        Box(Modifier.background(sectionGradient(section)).background(com.chencohensolutions.knesset.ui.theme.Contrast.headerScrim)) {
             LargeTopAppBar(
                 title = {
                     Text(

@@ -5,13 +5,13 @@ An Android app for browsing the Knesset open data: bills and laws, plenum votes 
 Built with Kotlin Multiplatform and Compose Multiplatform. All logic and UI live in common code, so an iOS target can be added later. The design and the API research are in [docs/PLAN.md](docs/PLAN.md).
 
 <p>
-<img src="docs/screenshots/01-home.png" width="180" alt="Home dashboard">
-<img src="docs/screenshots/03-bills-list.png" width="180" alt="Bills list with filters">
-<img src="docs/screenshots/05-bill-detail-top.png" width="180" alt="Bill detail">
-<img src="docs/screenshots/12-vote-detail-top.png" width="180" alt="Vote detail with totals">
-<img src="docs/screenshots/28-members-by-faction.png" width="180" alt="Members by faction">
-<img src="docs/screenshots/26-session-calendar.png" width="180" alt="Committee session calendar">
-<img src="docs/screenshots/50-explorer-sets.png" width="180" alt="Data Explorer">
+<img src="docs/screenshots/redesign/01-home.png" width="180" alt="Home dashboard">
+<img src="docs/screenshots/redesign/03-bills-list.png" width="180" alt="Bills list with filters">
+<img src="docs/screenshots/redesign/05-bill-detail-top.png" width="180" alt="Bill detail">
+<img src="docs/screenshots/redesign/12-vote-detail-top.png" width="180" alt="Vote detail with totals">
+<img src="docs/screenshots/redesign/28-members-by-faction.png" width="180" alt="Members by faction">
+<img src="docs/screenshots/redesign/26-session-calendar.png" width="180" alt="Committee session calendar">
+<img src="docs/screenshots/redesign/50-explorer-sets.png" width="180" alt="Data Explorer">
 </p>
 
 ## Install on a phone
