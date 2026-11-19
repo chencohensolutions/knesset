@@ -9,6 +9,7 @@ import com.chencohensolutions.knesset.core.platform.AppInfo
 import com.chencohensolutions.knesset.data.repo.Api
 import com.chencohensolutions.knesset.data.repo.KnessetContext
 import com.chencohensolutions.knesset.data.repo.LookupRepo
+import com.chencohensolutions.knesset.data.repo.PeopleRepo
 import com.chencohensolutions.knesset.db.KnessetDatabase
 import io.ktor.client.HttpClient
 import org.koin.dsl.module
@@ -26,4 +27,5 @@ val commonModule = module {
     single { Api(get()) }
     single { LookupRepo(get()) }
     single { KnessetContext(get(), get()) }
+    single { PeopleRepo(get()) }
 }

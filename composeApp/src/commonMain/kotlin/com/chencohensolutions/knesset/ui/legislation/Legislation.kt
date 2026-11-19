@@ -40,6 +40,8 @@ import com.chencohensolutions.knesset.ui.list.ListSpec
 import com.chencohensolutions.knesset.ui.list.Option
 import com.chencohensolutions.knesset.ui.list.SortOption
 import org.jetbrains.compose.resources.stringResource
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 // ---------- Lists ----------
 
@@ -162,7 +164,12 @@ private fun voteItem(v: PlenumVoteDto) = LinkItem(
     route = VoteRoute(v.id),
 )
 
-suspend fun loadBill(l: Loader, id: Int): DetailContent {
+suspend fun loadBill(l: Loader, id: Int): DetailContent = coroutineScope {
+    val votesAsync = async {
+        l.optional {
+            list(ODataQuery("KNS_PlenumVote").apply { filter(F.eq("ItemID", id)); orderBy = "VoteDateTime desc,Id desc"; top = 100 }, PlenumVoteDto.serializer(), Ttl.DETAIL)
+        }.orEmpty()
+    }
     val b = l.one(
         "KNS_Bill", id, BillDto.serializer(),
         listOf(
@@ -177,9 +184,7 @@ suspend fun loadBill(l: Loader, id: Int): DetailContent {
             LinkItem(names[lawId]?.name ?: "#$lawId", bindings.firstOrNull { it.israelLawID == lawId }?.amendmentTypeDesc, LawRoute(lawId))
         }
     }.orEmpty()
-    val votes = l.optional {
-        list(ODataQuery("KNS_PlenumVote").apply { filter(F.eq("ItemID", id)); orderBy = "VoteDateTime desc,Id desc"; top = 100 }, PlenumVoteDto.serializer(), Ttl.DETAIL)
-    }.orEmpty()
+    val votes = votesAsync.await()
     val related = buildList {
         b.billSplit.forEach { s ->
             val other = if (s.mainBillID == id) s.splitBillID else s.mainBillID
@@ -194,7 +199,7 @@ suspend fun loadBill(l: Loader, id: Int): DetailContent {
         byIds("KNS_Bill", related.mapNotNull { (it.route as? BillRoute)?.id }, BillDto.serializer(), listOf("Id", "Name")).associateBy { it.id }
     }.orEmpty()
     val initiators = b.billInitiator.sortedBy { it.ordinal ?: Int.MAX_VALUE }
-    return DetailContent(
+    DetailContent(
         kind = Kind.BILL, id = id,
         title = b.name ?: "#$id",
         status = b.status?.desc,

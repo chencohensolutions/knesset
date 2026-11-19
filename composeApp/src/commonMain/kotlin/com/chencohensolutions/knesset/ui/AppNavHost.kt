@@ -57,6 +57,10 @@ import com.chencohensolutions.knesset.ui.legislation.LawScreen
 import com.chencohensolutions.knesset.ui.legislation.LegislationScreen
 import com.chencohensolutions.knesset.ui.legislation.SecondaryLawScreen
 import androidx.navigation.toRoute
+import com.chencohensolutions.knesset.ui.people.FactionScreen
+import com.chencohensolutions.knesset.ui.people.MemberScreen
+import com.chencohensolutions.knesset.ui.people.MinistryScreen
+import com.chencohensolutions.knesset.ui.people.PeopleScreen
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KClass
@@ -127,7 +131,10 @@ private fun MainScaffold() {
             composable<SecondaryLawRoute> { SecondaryLawScreen(it.toRoute<SecondaryLawRoute>().id) }
             composable<PlenumRoute> { Placeholder(Res.string.tab_plenum) }
             composable<CommitteesRoute> { Placeholder(Res.string.tab_committees) }
-            composable<PeopleRoute> { Placeholder(Res.string.tab_people) }
+            composable<PeopleRoute> { PeopleScreen() }
+            composable<MemberRoute> { MemberScreen(it.toRoute<MemberRoute>().id) }
+            composable<FactionRoute> { FactionScreen(it.toRoute<FactionRoute>().id) }
+            composable<MinistryRoute> { MinistryScreen(it.toRoute<MinistryRoute>().id) }
             composable<SearchRoute> { Placeholder(Res.string.search) }
             composable<FavoritesRoute> { Placeholder(Res.string.favorites) }
             composable<ExplorerRoute> { Placeholder(Res.string.data_explorer) }
