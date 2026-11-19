@@ -61,6 +61,16 @@ class ODataClientTest {
     }
 
     @Test
+    fun metadataXmlIsAcceptedButHtmlIsNot() = runTest {
+        val xml = MockEngine { respond(fixture("metadata.xml"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/xml; charset=utf-8")) }
+        assertTrue(client(xml).getText("https://knesset.gov.il/OdataV4/ParliamentInfo/\$metadata").contains("KNS_Bill"))
+        val html = MockEngine { respond("<html>blocked</html>", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "text/html")) }
+        assertFailsWith<KnessetError.BlockedOrUnavailable> { client(html).getText("https://knesset.gov.il/OdataV4/ParliamentInfo/\$metadata") }
+        // XML anywhere else is still not data.
+        assertFailsWith<KnessetError.BlockedOrUnavailable> { client(xml).getText("https://knesset.gov.il/OdataV4/ParliamentInfo/KNS_Bill") }
+    }
+
+    @Test
     fun rateLimitIsRetriedHonoringRetryAfterThenSucceeds() = runTest {
         var calls = 0
         val engine = MockEngine {

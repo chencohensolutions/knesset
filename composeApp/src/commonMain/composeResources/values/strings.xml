@@ -15,7 +15,6 @@
     <string name="theme_light">בהירה</string>
     <string name="theme_dark">כהה</string>
     <string name="back">חזרה</string>
-    <string name="coming_soon">בקרוב</string>
     <string name="knesset_n">הכנסת ה-%1$s</string>
     <string name="knesset_all">כל הכנסות</string>
     <string name="search">חיפוש</string>
@@ -211,4 +210,18 @@
     <string name="home_new_laws">חוקים חדשים</string>
     <string name="favorites_empty">אין עדיין מועדפים. אפשר לסמן כוכב בכל הצעת חוק, חוק, חבר כנסת, ועדה או הצבעה.</string>
     <string name="updated">עודכן</string>
+    <string name="explorer_sets">%1$s טבלאות</string>
+    <string name="explorer_add_filter">הוספת סינון</string>
+    <string name="open">פתיחה</string>
+    <string name="f_permit_type">סוג היתר</string>
+    <string name="f_corporation">תאגיד</string>
+    <string name="f_practice_framework">מסגרת עיסוק</string>
+    <string name="f_independent">עצמאי</string>
+    <string name="f_faction_member">חבר סיעה</string>
+    <string name="clients">לקוחות</string>
+    <string name="about_text">אפליקציה לעיון במידע הפתוח של הכנסת: חקיקה, מליאה, ועדות וחברי כנסת. לקריאה בלבד, בלי חשבון ובלי איסוף נתונים.</string>
+    <string name="about_source">מקור הנתונים: שירות המידע הפתוח של הכנסת, %1$s. הנתונים מוצגים כפי שהם, בעברית.</string>
+    <string name="about_privacy">ההגדרות, המועדפים והמטמון נשמרים במכשיר בלבד.</string>
+    <string name="about_version">גרסה %1$s</string>
+    <string name="about_last_sync">עדכון אחרון מהשרת: %1$s</string>
 </resources>

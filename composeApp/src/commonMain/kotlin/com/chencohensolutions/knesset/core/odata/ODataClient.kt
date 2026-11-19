@@ -71,6 +71,12 @@ class ODataClient(
         }
         val body = response.bodyAsText()
         val type = response.contentType()
+        if (url.substringBefore('?').endsWith("\$metadata")) {
+            // The EDMX document is XML; an HTML page is still the "not available" page.
+            val isXml = type?.contentSubtype?.contains("xml", ignoreCase = true) == true || body.trimStart().startsWith("<?xml")
+            if (!isXml || !body.contains("<edmx:Edmx")) throw KnessetError.BlockedOrUnavailable()
+            return body
+        }
         val looksJson = type?.contentSubtype?.contains("json", ignoreCase = true) == true ||
             (type == null && body.trimStart().startsWith("{"))
         if (!looksJson || body.trimStart().startsWith("<")) throw KnessetError.BlockedOrUnavailable()

@@ -45,7 +45,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.chencohensolutions.knesset.resources.Res
-import com.chencohensolutions.knesset.resources.coming_soon
 import com.chencohensolutions.knesset.resources.tab_committees
 import com.chencohensolutions.knesset.resources.tab_home
 import com.chencohensolutions.knesset.resources.tab_legislation
@@ -57,6 +56,11 @@ import com.chencohensolutions.knesset.ui.legislation.LawScreen
 import com.chencohensolutions.knesset.ui.legislation.LegislationScreen
 import com.chencohensolutions.knesset.ui.legislation.SecondaryLawScreen
 import androidx.navigation.toRoute
+import com.chencohensolutions.knesset.ui.settings.AboutScreen
+import com.chencohensolutions.knesset.ui.lobbyists.LobbyistScreen
+import com.chencohensolutions.knesset.ui.explorer.ExplorerItemScreen
+import com.chencohensolutions.knesset.ui.explorer.ExplorerScreen
+import com.chencohensolutions.knesset.ui.explorer.ExplorerSetScreen
 import com.chencohensolutions.knesset.ui.home.HomeScreen
 import com.chencohensolutions.knesset.ui.favorites.FavoritesScreen
 import com.chencohensolutions.knesset.ui.search.SearchScreen
@@ -156,19 +160,13 @@ private fun MainScaffold() {
             composable<SearchRoute> { SearchScreen(it.toRoute<SearchRoute>().query) }
             composable<KindListRoute> { val r = it.toRoute<KindListRoute>(); KindListScreen(r.kind, r.query) }
             composable<FavoritesRoute> { FavoritesScreen() }
-            composable<ExplorerRoute> { Placeholder(Res.string.data_explorer) }
-            composable<AboutRoute> { Placeholder(Res.string.about) }
+            composable<ExplorerRoute> { ExplorerScreen() }
+            composable<ExplorerSetRoute> { ExplorerSetScreen(it.toRoute<ExplorerSetRoute>().name) }
+            composable<ExplorerItemRoute> { val r = it.toRoute<ExplorerItemRoute>(); ExplorerItemScreen(r.name, r.id) }
+            composable<AboutRoute> { AboutScreen() }
+            composable<LobbyistRoute> { LobbyistScreen(it.toRoute<LobbyistRoute>().id) }
             composable<SettingsRoute> { SettingsScreen(onBack = { nav.popBackStack() }) }
         }
       }
-    }
-}
-
-@Composable
-private fun Placeholder(title: StringResource) {
-    Scaffold(topBar = { RootTopBar(stringResource(title)) }) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(stringResource(title) + " · " + stringResource(Res.string.coming_soon))
-        }
     }
 }

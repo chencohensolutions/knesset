@@ -14,6 +14,7 @@ import com.chencohensolutions.knesset.data.repo.FavoritesRepo
 import com.chencohensolutions.knesset.data.repo.RecentSearchRepo
 import com.chencohensolutions.knesset.db.KnessetDatabase
 import io.ktor.client.HttpClient
+import com.chencohensolutions.knesset.ui.lobbyists.LobbyistsAvailability
 import org.koin.dsl.module
 
 /**
@@ -25,11 +26,12 @@ val commonModule = module {
     single { KnessetDatabase(get()) }
     single { ODataClient(ODataClient.configure(get<HttpClient>(), get<AppInfo>().versionName)) }
     single<HttpCacheStore> { SqlHttpCacheStore(get()) }
-    single { CachedFetcher(get(), get()) }
+    single { CachedFetcher(get(), get(), onNetworkSuccess = { at -> get<AppSettings>().markSynced(at) }) }
     single { Api(get()) }
     single { LookupRepo(get()) }
     single { KnessetContext(get(), get()) }
     single { PeopleRepo(get()) }
     single { FavoritesRepo(get(), get()) }
     single { RecentSearchRepo(get()) }
+    single { LobbyistsAvailability(get()) }
 }

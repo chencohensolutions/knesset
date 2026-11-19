@@ -15,7 +15,6 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="back">Back</string>
-    <string name="coming_soon">Coming soon</string>
     <string name="knesset_n">Knesset %1$s</string>
     <string name="knesset_all">All Knessets</string>
     <string name="search">Search</string>
@@ -211,4 +210,18 @@
     <string name="home_new_laws">New laws</string>
     <string name="favorites_empty">No favorites yet. Star any bill, law, member, committee or vote.</string>
     <string name="updated">Updated</string>
+    <string name="explorer_sets">%1$s entity sets</string>
+    <string name="explorer_add_filter">Add filter</string>
+    <string name="open">Open</string>
+    <string name="f_permit_type">Permit type</string>
+    <string name="f_corporation">Corporation</string>
+    <string name="f_practice_framework">Practice framework</string>
+    <string name="f_independent">Independent</string>
+    <string name="f_faction_member">Faction member</string>
+    <string name="clients">Clients</string>
+    <string name="about_text">A browser for the Knesset open data: legislation, plenum, committees and members. Read only, no account, no tracking.</string>
+    <string name="about_source">Data source: the Knesset open data service, %1$s. Data is shown as published, in Hebrew.</string>
+    <string name="about_privacy">Settings, favorites and the cache stay on this device.</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_last_sync">Last fetched from the server: %1$s</string>
 </resources>

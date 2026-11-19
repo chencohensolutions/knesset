@@ -8,6 +8,7 @@ import com.chencohensolutions.knesset.core.odata.KnessetError
 import com.chencohensolutions.knesset.core.odata.ODataInstant
 import com.chencohensolutions.knesset.db.KnessetDatabase
 import com.chencohensolutions.knesset.ui.Kind
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -84,13 +85,17 @@ class FavoritesRepo(private val db: KnessetDatabase, private val api: Api, priva
 }
 
 /** Recent searches, newest first, at most 10. */
-class RecentSearchRepo(private val db: KnessetDatabase, private val clock: Clock = Clock.System) {
+class RecentSearchRepo(
+    private val db: KnessetDatabase,
+    private val clock: Clock = Clock.System,
+    private val io: CoroutineDispatcher = Dispatchers.IO,
+) {
     private val q get() = db.knessetQueries
-    fun all(): Flow<List<String>> = q.recentAll().asFlow().mapToList(Dispatchers.IO)
-    suspend fun add(text: String) = withContext(Dispatchers.IO) {
+    fun all(): Flow<List<String>> = q.recentAll().asFlow().mapToList(io)
+    suspend fun add(text: String) = withContext(io) {
         val t = text.trim()
         if (t.length < 2) return@withContext
         q.recentPut(t, clock.now().toEpochMilliseconds()); q.recentTrim()
     }
-    suspend fun clear() = withContext(Dispatchers.IO) { q.recentClear() }
+    suspend fun clear() = withContext(io) { q.recentClear() }
 }

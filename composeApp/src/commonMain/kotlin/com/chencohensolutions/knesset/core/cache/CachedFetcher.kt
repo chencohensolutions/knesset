@@ -97,6 +97,8 @@ class CachedFetcher(
     private val client: ODataClient,
     private val store: HttpCacheStore,
     private val clock: Clock = Clock.System,
+    /** Called with the time of every successful network fetch (the About screen's "last sync"). */
+    private val onNetworkSuccess: (Long) -> Unit = {},
 ) {
     /** Emits the cached body (if any), then the fresh one when the cache is missing or stale. */
     fun stream(url: String, ttl: Ttl, force: Boolean = false): Flow<Resource<String>> = flow {
@@ -111,7 +113,9 @@ class CachedFetcher(
         }
         try {
             val body = client.getText(url)
-            store.put(url, body, clock.now().toEpochMilliseconds())
+            val at = clock.now().toEpochMilliseconds()
+            store.put(url, body, at)
+            onNetworkSuccess(at)
             emit(Resource.Data(body))
         } catch (e: KnessetError) {
             emit(Resource.Error(e, cached?.first))
@@ -130,7 +134,9 @@ class CachedFetcher(
         if (cached != null && !force && (!stale || preferCache)) return Fetched(cached.first, fromCache = true, isStale = stale)
         return try {
             val body = client.getText(url)
-            store.put(url, body, clock.now().toEpochMilliseconds())
+            val at = clock.now().toEpochMilliseconds()
+            store.put(url, body, at)
+            onNetworkSuccess(at)
             Fetched(body, fromCache = false, isStale = false)
         } catch (e: KnessetError) {
             if (cached != null && e !is KnessetError.NotFound) Fetched(cached.first, fromCache = true, isStale = true, offline = true) else throw e
