@@ -42,7 +42,14 @@ import com.chencohensolutions.knesset.ui.LocalNav
 import com.chencohensolutions.knesset.ui.SittingRoute
 import com.chencohensolutions.knesset.ui.committees.calendarSpec
 import com.chencohensolutions.knesset.ui.committees.todayInIsrael
-import com.chencohensolutions.knesset.ui.components.RootTopBar
+import com.chencohensolutions.knesset.ui.components.RootActions
+import com.chencohensolutions.knesset.ui.components.GradientHeader
+import com.chencohensolutions.knesset.ui.theme.AppTheme
+import com.chencohensolutions.knesset.ui.theme.Section as Hue
+import com.chencohensolutions.knesset.ui.theme.Space
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.chencohensolutions.knesset.ui.components.rememberDetailVm
 import com.chencohensolutions.knesset.ui.detail.DetailContent
 import com.chencohensolutions.knesset.ui.detail.DetailStateContent
@@ -109,7 +116,7 @@ suspend fun loadHome(l: Loader, api: Api, lookups: LookupRepo, selection: Knesse
         kind = null, id = 0, title = "",
         sections = listOf(
             Section.Links(if (live) Res.string.home_next_sitting else Res.string.home_last_sitting, plenumAsync.await(), countInTitle = false, showAll = KindListRoute(Kind.SITTING.name)),
-            Section.Links(if (live) Res.string.home_upcoming_sessions else Res.string.home_last_sessions, sessionsAsync.await(), countInTitle = false, showAll = CommitteesRoute, showWhenEmpty = true),
+            Section.Links(if (live) Res.string.home_upcoming_sessions else Res.string.home_last_sessions, sessionsAsync.await(), countInTitle = false, showAll = CommitteesRoute, carousel = true),
             Section.Links(Res.string.home_latest_votes, votesAsync.await(), countInTitle = false, showAll = KindListRoute(Kind.VOTE.name), showWhenEmpty = true),
             Section.Links(Res.string.home_recent_bills, billsAsync.await(), countInTitle = false, showAll = KindListRoute(Kind.BILL.name), showWhenEmpty = true),
             Section.Links(Res.string.home_new_laws, lawsAsync.await(), countInTitle = false, showAll = KindListRoute(Kind.LAW.name), showWhenEmpty = true),
@@ -124,10 +131,21 @@ fun HomeScreen() {
     val api = koinInject<Api>()
     val selection by ctx.selection.collectAsStateWithLifecycle()
     val vm = rememberDetailVm("home${selection.selected}") { lookups -> loadHome(this, api, lookups, selection) }
-    Scaffold(topBar = { RootTopBar(stringResource(Res.string.tab_home)) }) { padding ->
+    val behavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.nestedScroll(behavior.nestedScrollConnection),
+        containerColor = AppTheme.colors.background,
+        topBar = { GradientHeader(stringResource(Res.string.tab_home), Hue.HOME, behavior, actions = { RootActions() }) },
+    ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
+            Text(
+                IsraelTime.date(todayInIsrael()),
+                Modifier.padding(horizontal = Space.gutter, vertical = Space.xs),
+                style = MaterialTheme.typography.labelLarge,
+                color = AppTheme.colors.textSecondary,
+            )
             FavoritesStrip()
-            DetailStateContent(vm)
+            DetailStateContent(vm, showHeader = false)
         }
     }
 }

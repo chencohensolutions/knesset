@@ -1,6 +1,20 @@
 package com.chencohensolutions.knesset.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.chencohensolutions.knesset.resources.choose_knesset
+import com.chencohensolutions.knesset.ui.theme.AppTheme
+import com.chencohensolutions.knesset.ui.theme.Radius
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -46,61 +60,56 @@ import org.koin.compose.koinInject
 fun knessetLabel(number: Int?): String =
     if (number == null) stringResource(Res.string.knesset_all) else stringResource(Res.string.knesset_n, number)
 
-/** The global Knesset selector chip (plan 2.2). */
+/** The global Knesset selector (plan 2.2): a white pill on the header that opens the picker sheet (docs 3.16). */
 @Composable
-fun KnessetSelectorChip() {
+fun KnessetSelectorChip(onGradient: Boolean = true) {
     val ctx = koinInject<KnessetContext>()
     val selection by ctx.selection.collectAsStateWithLifecycle()
     var open by remember { mutableStateOf(false) }
-    Box {
-        AssistChip(
-            onClick = { open = true },
-            label = { Text(knessetLabel(selection.selected), maxLines = 1) },
-            trailingIcon = { Icon(Icons.Filled.ArrowDropDown, null) },
-        )
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(text = { Text(knessetLabel(null)) }, onClick = { ctx.select(null); open = false })
-            selection.terms.forEach { n ->
-                DropdownMenuItem(text = { Text(knessetLabel(n)) }, onClick = { ctx.select(n); open = false })
-            }
+    Row(
+        Modifier.clip(Radius.pill).background(if (onGradient) Color.White.copy(alpha = 0.22f) else AppTheme.container)
+            .clickable { open = true }.padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(knessetLabel(selection.selected), maxLines = 1, style = MaterialTheme.typography.labelLarge, color = if (onGradient) Color.White else AppTheme.colors.textPrimary)
+        Icon(Icons.Filled.ArrowDropDown, null, tint = if (onGradient) Color.White else AppTheme.colors.textPrimary)
+    }
+    if (open) {
+        AppSheet(stringResource(Res.string.choose_knesset), { open = false }) {
+            KnessetGrid(selection.terms, selection.current, selection.selected, knessetLabel(null)) { ctx.select(it); open = false }
         }
     }
 }
 
-/** Top bar of every root tab: title, Knesset selector, search, overflow. */
+/** The actions of every root tab header: Knesset pill, search, overflow. */
 @Composable
-fun RootTopBar(title: String) {
+fun RowScope.RootActions() {
     val nav = LocalNav.current
     var menu by remember { mutableStateOf(false) }
-    TopAppBar(
-        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        actions = {
-            KnessetSelectorChip()
-            IconButton(onClick = { nav.navigate(SearchRoute()) }) { Icon(Icons.Filled.Search, stringResource(Res.string.search)) }
-            Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(Res.string.more)) }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.favorites)) }, onClick = { menu = false; nav.navigate(FavoritesRoute) })
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.downloads)) }, onClick = { menu = false; nav.navigate(com.chencohensolutions.knesset.ui.DownloadsRoute) })
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.data_explorer)) }, onClick = { menu = false; nav.navigate(ExplorerRoute) })
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.settings)) }, onClick = { menu = false; nav.navigate(SettingsRoute) })
-                    DropdownMenuItem(text = { Text(stringResource(Res.string.about)) }, onClick = { menu = false; nav.navigate(AboutRoute) })
-                }
-            }
-        },
-    )
+    KnessetSelectorChip()
+    IconButton(onClick = { nav.navigate(SearchRoute()) }) { Icon(Icons.Filled.Search, stringResource(Res.string.search), tint = Color.White) }
+    Box {
+        IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(Res.string.more), tint = Color.White) }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, shape = Radius.tile) {
+            DropdownMenuItem(text = { Text(stringResource(Res.string.favorites)) }, onClick = { menu = false; nav.navigate(FavoritesRoute) })
+            DropdownMenuItem(text = { Text(stringResource(Res.string.downloads)) }, onClick = { menu = false; nav.navigate(com.chencohensolutions.knesset.ui.DownloadsRoute) })
+            DropdownMenuItem(text = { Text(stringResource(Res.string.data_explorer)) }, onClick = { menu = false; nav.navigate(ExplorerRoute) })
+            DropdownMenuItem(text = { Text(stringResource(Res.string.settings)) }, onClick = { menu = false; nav.navigate(SettingsRoute) })
+            DropdownMenuItem(text = { Text(stringResource(Res.string.about)) }, onClick = { menu = false; nav.navigate(AboutRoute) })
+        }
+    }
+}
+
+/** Top bar of every root tab (kept for screens that do not scroll with a hero header). */
+@Composable
+fun RootTopBar(title: String) {
+    val behavior = TopAppBarDefaults.pinnedScrollBehavior()
+    GradientHeader(title, AppTheme.section, behavior, actions = { RootActions() })
 }
 
 @Composable
 fun DetailTopBar(title: String, actions: @Composable RowScope.() -> Unit = {}) {
     val nav = LocalNav.current
-    TopAppBar(
-        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        navigationIcon = {
-            IconButton(onClick = { nav.popBackStack() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(Res.string.back))
-            }
-        },
-        actions = actions,
-    )
+    val behavior = TopAppBarDefaults.pinnedScrollBehavior()
+    GradientHeader(title, AppTheme.section, behavior, onBack = { nav.popBackStack() }, actions = actions)
 }

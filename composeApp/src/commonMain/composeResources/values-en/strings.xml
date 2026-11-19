@@ -263,4 +263,10 @@
     <string name="delete">Delete</string>
     <string name="filters">Filters</string>
     <string name="show_n_results">Show %1$s results</string>
+    <string name="choose_knesset">Choose a Knesset</string>
+    <string name="stage_preliminary">Preliminary</string>
+    <string name="stage_first">First reading</string>
+    <string name="stage_committee">Committee</string>
+    <string name="stage_final">Final readings</string>
+    <string name="stage_published">Published</string>
 </resources>

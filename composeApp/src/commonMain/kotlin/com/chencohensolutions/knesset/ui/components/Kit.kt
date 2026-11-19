@@ -57,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -232,7 +233,8 @@ fun VoteSummary(tally: VoteTally) {
 @Composable
 fun HemicycleChart(colors: List<Color>, modifier: Modifier = Modifier) {
     if (colors.isEmpty()) return
-    val seats = remember(colors.size) { Hemicycle.layout(colors.size) }
+    // About 24 seats per row at most, so a small vote is one tidy arc and a full plenum is five rows.
+    val seats = remember(colors.size) { Hemicycle.layout(colors.size, rows = ((colors.size + 23) / 24).coerceIn(1, 5)) }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val fill = remember(colors) { Animatable(0f) }
     LaunchedEffect(colors) { fill.animateTo(colors.size.toFloat(), tween(colors.size * 2 + Motion.MEDIUM)) }
@@ -325,3 +327,13 @@ fun VideoThumb(modifier: Modifier = Modifier, section: Section = Section.PLENUM)
 @Composable
 fun Gap(size: Dp = Space.m) = Spacer(Modifier.size(size))
 
+
+/** Detail sections rise in with a short stagger the first time they appear (docs 4 Home, 5.5). */
+@Composable
+fun Modifier.appearOnceSection(index: Int): Modifier {
+    if (index >= 8) return this
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { progress.animateTo(1f, tween(Motion.MEDIUM, delayMillis = index * 40, easing = Motion.emphasized)) }
+    val rise = with(androidx.compose.ui.platform.LocalDensity.current) { 12.dp.toPx() }
+    return this.then(Modifier.graphicsLayer { alpha = progress.value; translationY = (1f - progress.value) * rise })
+}

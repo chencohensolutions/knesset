@@ -207,7 +207,12 @@ suspend fun loadVote(l: Loader, id: Int, people: PeopleRepo): DetailContent = co
         lastUpdated = v.lastUpdatedDate,
         favoriteSubtitle = v.voteDateTime?.let(IsraelTime::date),
         sections = listOf(
-            Section.Tally(Res.string.results, VoteTally.of(results)),
+            Section.Tally(
+                Res.string.results, VoteTally.of(results),
+                seatResults = results.distinctBy { it.id }
+                    .sortedWith(compareBy({ factions[it.mkId] ?: "~" }, { it.resultCode ?: 99 }))
+                    .map { it.resultDesc?.trim() ?: "" },
+            ),
             Section.Facts(Res.string.details, factsOf(
                 fact(Res.string.f_subject, v.voteSubject),
                 fact(Res.string.f_date, v.voteDateTime),

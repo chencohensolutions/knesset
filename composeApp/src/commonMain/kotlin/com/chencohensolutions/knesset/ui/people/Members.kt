@@ -8,6 +8,14 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import com.chencohensolutions.knesset.ui.components.ChoicePill
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -146,23 +154,15 @@ fun MembersContent() {
     val vm = viewModel(key = "members") { MembersViewModel(repo, ctx) }
     val s by vm.state.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            value = s.query, onValueChange = { q -> vm.update { it.copy(query = q) } },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-            placeholder = { Text(stringResource(Res.string.search)) },
-            leadingIcon = { Icon(Icons.Filled.Search, null) },
-            trailingIcon = { if (s.query.isNotEmpty()) IconButton(onClick = { vm.update { it.copy(query = "") } }) { Icon(Icons.Filled.Clear, stringResource(Res.string.clear_all)) } },
-            singleLine = true,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
-        )
-        LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            item { FilterChip(s.byFaction, { vm.update { it.copy(byFaction = true) } }, { Text(stringResource(Res.string.by_faction)) }) }
-            item { FilterChip(!s.byFaction, { vm.update { it.copy(byFaction = false) } }, { Text(stringResource(Res.string.alphabetical)) }) }
-            item { FilterChip(s.servingOnly, { vm.update { it.copy(servingOnly = !it.servingOnly) } }, { Text(stringResource(Res.string.currently_serving)) }) }
-            item { FilterChip(s.gender == 250, { vm.update { it.copy(gender = if (it.gender == 250) null else 250) } }, { Text(stringResource(Res.string.gender_female)) }) }
-            item { FilterChip(s.gender == 251, { vm.update { it.copy(gender = if (it.gender == 251) null else 251) } }, { Text(stringResource(Res.string.gender_male)) }) }
+        com.chencohensolutions.knesset.ui.components.SearchPill(s.query, { q -> vm.update { it.copy(query = q) } }, stringResource(Res.string.search))
+        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            item { ChoicePill(stringResource(Res.string.by_faction), s.byFaction, { vm.update { it.copy(byFaction = true) } }) }
+            item { ChoicePill(stringResource(Res.string.alphabetical), !s.byFaction, { vm.update { it.copy(byFaction = false) } }) }
+            item { ChoicePill(stringResource(Res.string.currently_serving), s.servingOnly, { vm.update { it.copy(servingOnly = !it.servingOnly) } }) }
+            item { ChoicePill(stringResource(Res.string.gender_female), s.gender == 250, { vm.update { it.copy(gender = if (it.gender == 250) null else 250) } }) }
+            item { ChoicePill(stringResource(Res.string.gender_male), s.gender == 251, { vm.update { it.copy(gender = if (it.gender == 251) null else 251) } }) }
             items(s.factions, key = { it.first }) { (id, name) ->
-                FilterChip(s.faction == id, { vm.update { it.copy(faction = if (it.faction == id) null else id) } }, { Text(name, maxLines = 1) })
+                ChoicePill(name, s.faction == id, { vm.update { it.copy(faction = if (it.faction == id) null else id) } }, Modifier.widthIn(max = 240.dp))
             }
         }
         val list = s.filtered
@@ -181,31 +181,36 @@ fun MembersContent() {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MemberList(members: List<Member>, byFaction: Boolean) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 8.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (byFaction) {
             members.groupBy { it.factionName ?: "" }.toSortedMap().forEach { (faction, group) ->
                 stickyHeader(key = "h$faction") {
-                    DataText(
-                        "$faction (${group.size})",
-                        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 16.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
+                    Row(
+                        Modifier.fillMaxWidth().background(com.chencohensolutions.knesset.ui.theme.AppTheme.colors.background).padding(horizontal = 16.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Box(Modifier.size(10.dp).clip(CircleShape).background(com.chencohensolutions.knesset.ui.theme.FactionColors.of(group.first().factionId)))
+                        DataText("$faction · ${group.size}", style = MaterialTheme.typography.titleSmall)
+                    }
                 }
-                items(group, key = { "f$faction-${it.personId}" }) { MemberRow(it, showFaction = false) }
+                items(group, key = { "f$faction-${it.personId}" }) { MemberRow(it, showFaction = false, Modifier.animateItem()) }
             }
         } else {
-            items(members, key = { it.personId }) { MemberRow(it, showFaction = true) }
+            items(members, key = { it.personId }) { MemberRow(it, showFaction = true, Modifier.animateItem()) }
         }
     }
 }
 
 @Composable
-private fun MemberRow(m: Member, showFaction: Boolean) {
-    ItemRow(
-        title = m.name.ifBlank { "#${m.personId}" },
-        subtitle = if (showFaction) m.factionName else null,
-        initials = People.initials(m.firstName, m.lastName),
-        route = MemberRoute(m.personId),
-    )
-    HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+private fun MemberRow(m: Member, showFaction: Boolean, modifier: Modifier = Modifier) {
+    Box(modifier) {
+        ItemRow(
+            title = m.name.ifBlank { "#${m.personId}" },
+            subtitle = if (showFaction) m.factionName else null,
+            initials = People.initials(m.firstName, m.lastName),
+            factionId = m.factionId,
+            route = MemberRoute(m.personId),
+            card = true,
+        )
+    }
 }

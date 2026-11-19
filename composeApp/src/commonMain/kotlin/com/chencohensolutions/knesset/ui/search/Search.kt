@@ -51,6 +51,7 @@ import com.chencohensolutions.knesset.resources.Res
 import com.chencohensolutions.knesset.resources.clear_all
 import com.chencohensolutions.knesset.resources.recent_searches
 import com.chencohensolutions.knesset.resources.search_hint
+import com.chencohensolutions.knesset.resources.search
 import com.chencohensolutions.knesset.resources.show_all_n
 import com.chencohensolutions.knesset.ui.KindListRoute
 import com.chencohensolutions.knesset.ui.Kind
@@ -143,18 +144,11 @@ fun SearchScreen(initial: String) {
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { if (initial.isBlank()) runCatching { focus.requestFocus() } }
 
-    Scaffold(topBar = {
-        DetailTopBar("") {
-            TextField(
-                value = state.query,
-                onValueChange = vm::setQuery,
-                modifier = Modifier.fillMaxWidth().padding(end = 8.dp).focusRequester(focus),
-                placeholder = { Text(stringResource(Res.string.search_hint)) },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
-                trailingIcon = { if (state.query.isNotEmpty()) IconButton(onClick = { vm.setQuery("") }) { Icon(Icons.Filled.Clear, stringResource(Res.string.clear_all)) } },
-                colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent),
-            )
+    Scaffold(containerColor = com.chencohensolutions.knesset.ui.theme.AppTheme.colors.background, topBar = {
+        Column {
+            DetailTopBar(stringResource(Res.string.search))
+            // The query sits in a pill on the page, not inside the gradient bar, so typed text is always readable.
+            com.chencohensolutions.knesset.ui.components.SearchPill(state.query, vm::setQuery, stringResource(Res.string.search_hint), Modifier.padding(top = 8.dp).focusRequester(focus))
         }
     }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {

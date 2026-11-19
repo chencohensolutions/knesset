@@ -79,8 +79,17 @@ fun roleLabel(p: PersonToPositionDto): String {
     return if (where != null && !what.contains(where)) "$what · $where" else what
 }
 
-fun dateSpan(p: PersonToPositionDto): String =
-    listOf(p.startDate?.let(IsraelTime::date) ?: "", p.finishDate?.let(IsraelTime::date) ?: "").joinToString("–")
+/** "11/11/2026–01/07/2027", or "מאז 11/11/2026" / "עד 01/07/2027" when one end is open (docs 4 Committee). */
+fun dateSpan(p: PersonToPositionDto): String {
+    val from = p.startDate?.let(IsraelTime::date)
+    val to = p.finishDate?.let(IsraelTime::date)
+    return when {
+        from != null && to != null -> "\u2068$from\u2069–\u2068$to\u2069"
+        from != null -> "מאז \u2068$from\u2069"
+        to != null -> "עד \u2068$to\u2069"
+        else -> ""
+    }
+}
 
 private fun roleRoute(p: PersonToPositionDto): Any? = when {
     p.committeeID != null -> CommitteeRoute(p.committeeID)
@@ -136,6 +145,7 @@ suspend fun loadMember(l: Loader, id: Int, lookups: LookupRepo): DetailContent =
         webUrl = People.memberPage(siteId),
         lastUpdated = person.lastUpdatedDate,
         favoriteSubtitle = faction?.factionName?.trim(),
+        avatar = People.initials(person.firstName, person.lastName) to faction?.factionID,
         tabs = listOf(
             DetailTab(Res.string.overview, listOf(
                 Section.Facts(null, factsOf(
@@ -238,6 +248,8 @@ val ministriesSpec = ListSpec(
     serializer = GovMinistryDto.serializer(),
     search = { F.contains("Name", it) },
     knessetField = null,
+    // The table has many "אין נתונים" (no data) placeholder rows.
+    baseFilters = listOf("Name ne 'אין נתונים'"),
     sorts = listOf(SortOption(Res.string.sort_name, "Name")),
     filters = listOf(FilterDef.Toggle("active", Res.string.filter_active, F.eq("IsActive", true))),
     ttl = Ttl.LOOKUP,

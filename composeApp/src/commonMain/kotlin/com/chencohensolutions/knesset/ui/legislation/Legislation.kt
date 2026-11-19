@@ -206,6 +206,8 @@ suspend fun loadBill(l: Loader, id: Int): DetailContent = coroutineScope {
         subtitle = listOfNotNull(b.subTypeDesc, b.knessetNum?.let { "כנסת $it" }).joinToString(" · "),
         lastUpdated = b.lastUpdatedDate,
         favoriteSubtitle = b.subTypeDesc,
+        stage = com.chencohensolutions.knesset.domain.BillStages.stageOf(b.status?.desc, publicationDate = b.publicationDate != null && b.publicationSeriesDesc?.contains("ספר החוקים") == true) to
+            (com.chencohensolutions.knesset.domain.StatusStyles.tone(b.status?.desc) == com.chencohensolutions.knesset.domain.StatusTone.STOPPED),
         sections = listOf(
             Section.Facts(Res.string.details, factsOf(
                 fact(Res.string.f_type, b.typeDesc),

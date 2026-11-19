@@ -3,9 +3,7 @@ package com.chencohensolutions.knesset.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,7 +11,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.chencohensolutions.knesset.ui.theme.AppTheme
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chencohensolutions.knesset.data.repo.Api
 import com.chencohensolutions.knesset.data.repo.KnessetContext
@@ -47,20 +52,24 @@ fun rememberDetailVm(key: String, build: suspend Loader.(LookupRepo) -> DetailCo
     return viewModel(key = key) { DetailViewModel(api) { build(lookups) } }
 }
 
-/** A root tab with a row of section tabs under the top bar. */
+/** A root tab: gradient hero header that collapses with scroll, then pill tabs over a swipeable pager (docs 3.1, 3.4). */
 @Composable
 fun SectionTabsScreen(title: StringResource, sections: List<Pair<StringResource, @Composable () -> Unit>>) {
-    var selected by rememberSaveable { mutableIntStateOf(0) }
-    Scaffold(topBar = { RootTopBar(stringResource(title)) }) { padding ->
+    val behavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    var saved by rememberSaveable { mutableIntStateOf(0) }
+    val pager = rememberPagerState(initialPage = saved) { sections.size }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(pager.currentPage) { saved = pager.currentPage }
+    Scaffold(
+        modifier = Modifier.nestedScroll(behavior.nestedScrollConnection),
+        containerColor = AppTheme.colors.background,
+        topBar = { GradientHeader(stringResource(title), AppTheme.section, behavior, actions = { RootActions() }) },
+    ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (sections.size > 1) {
-                PrimaryTabRow(selectedTabIndex = selected) {
-                    sections.forEachIndexed { i, (label, _) ->
-                        Tab(selected = selected == i, onClick = { selected = i }, text = { Text(stringResource(label), maxLines = 1, overflow = TextOverflow.Ellipsis) })
-                    }
-                }
+                PillTabs(sections.map { stringResource(it.first) }, pager.currentPage) { scope.launch { pager.animateScrollToPage(it) } }
             }
-            sections[selected].second()
+            HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 0, key = { it }) { page -> sections[page].second() }
         }
     }
 }

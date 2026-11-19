@@ -263,4 +263,10 @@
     <string name="delete">מחיקה</string>
     <string name="filters">סינון</string>
     <string name="show_n_results">הצגת %1$s תוצאות</string>
+    <string name="choose_knesset">בחירת כנסת</string>
+    <string name="stage_preliminary">טרום</string>
+    <string name="stage_first">ראשונה</string>
+    <string name="stage_committee">ועדה</string>
+    <string name="stage_final">שנייה ושלישית</string>
+    <string name="stage_published">פורסם</string>
 </resources>

@@ -21,6 +21,10 @@ data class DetailContent(
     val lastUpdated: Instant? = null,
     /** Short text stored with a favorite. */
     val favoriteSubtitle: String? = null,
+    /** Initials and faction for the big avatar in a member header. */
+    val avatar: Pair<String, Int?>? = null,
+    /** Bill stage tracker: reached stage index and whether the bill stopped. */
+    val stage: Pair<Int, Boolean>? = null,
 )
 
 data class DetailTab(val title: StringResource, val sections: List<Section>)
@@ -60,6 +64,8 @@ sealed interface Section {
         val showAll: Any? = null,
         /** Shown instead of hiding the section when it is empty. */
         val showWhenEmpty: Boolean = false,
+        /** Shown as a horizontal carousel of compact cards (Home). */
+        val carousel: Boolean = false,
     ) : Section {
         override val isEmpty get() = items.isEmpty() && !showWhenEmpty
     }
@@ -79,7 +85,12 @@ sealed interface Section {
         override val isEmpty get() = docs.isEmpty()
     }
 
-    data class Tally(override val title: StringResource?, val tally: VoteTally) : Section {
+    data class Tally(
+        override val title: StringResource?,
+        val tally: VoteTally,
+        /** One result per seat, ordered so groups sit together, for the hemicycle. */
+        val seatResults: List<String> = emptyList(),
+    ) : Section {
         override val isEmpty get() = tally.total == 0
     }
 
