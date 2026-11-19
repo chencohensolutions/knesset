@@ -38,6 +38,23 @@ class LookupRepo(private val api: Api) {
         return Terms(numbers, current, dates)
     }
 
+    /** The first plenum start of Knesset [k] and of the next Knesset (null for the current one). */
+    suspend fun knessetRange(k: Int): Pair<kotlin.time.Instant?, kotlin.time.Instant?> {
+        val dates = knessetDates()
+        val start = dates.filter { it.knessetNum == k }.mapNotNull { it.plenumStart }.minOrNull()
+        val next = dates.filter { (it.knessetNum ?: 0) > k }.mapNotNull { it.plenumStart }.minOrNull()
+        return start to next
+    }
+
+    /** `$filter` fragment that keeps rows whose [field] falls inside Knesset [k]. */
+    suspend fun knessetDateFilter(k: Int, field: String): String? {
+        val (start, end) = knessetRange(k)
+        return com.chencohensolutions.knesset.core.odata.F.and(
+            start?.let { com.chencohensolutions.knesset.core.odata.F.ge(field, it) },
+            end?.let { "$field lt ${com.chencohensolutions.knesset.core.odata.F.dateLiteral(it)}" },
+        )
+    }
+
     data class Terms(val numbers: List<Int>, val current: Int?, val dates: List<KnessetDatesDto>)
 
     suspend fun statuses(): Map<Int, StatusDto> = memo("status", false) {

@@ -60,7 +60,9 @@ class ListViewModel<R>(
         if (spec.needsStatuses && rowContext.statuses.isEmpty()) {
             rowContext = RowContext(runCatching { lookups.statuses() }.getOrDefault(emptyMap()))
         }
-        val q = buildQuery().copy { this.top = top; this.skip = skip; count = withCount }
+        val k = knesset.selection.value.selected
+        val kFragment = if (k != null && spec.knessetFilter != null) spec.knessetFilter.invoke(k, lookups) else null
+        val q = buildQuery(kFragment).copy { this.top = top; this.skip = skip; count = withCount }
         val page = api.page(q, spec.serializer, knesset.selection.value.ttl(spec.ttl), if (force) FetchMode.FORCE else FetchMode.NORMAL)
         PageResult(page.rows.map { spec.toRow(it, rowContext) }, page.count, page.offline)
     }
@@ -80,10 +82,11 @@ class ListViewModel<R>(
         }
     }
 
-    fun buildQuery(): ODataQuery {
+    fun buildQuery(knessetFragment: String? = null): ODataQuery {
         val s = _ui.value
         return ODataQuery(spec.entitySet).apply {
             spec.baseFilters.forEach { filter(it) }
+            filter(knessetFragment)
             val k = knesset.selection.value.selected
             if (spec.knessetField != null && k != null) filter(F.eq(spec.knessetField, k))
             val text = s.query.trim()

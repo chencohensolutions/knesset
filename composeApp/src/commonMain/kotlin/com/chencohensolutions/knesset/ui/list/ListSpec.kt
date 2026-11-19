@@ -60,6 +60,8 @@ class ListSpec<R>(
     val search: ((String) -> String?)? = null,
     /** The field the Knesset selector filters on, or null when the entity has none. */
     val knessetField: String? = "KnessetNum",
+    /** For entities without KnessetNum: a fragment that limits rows to the selected Knesset (for example by date). */
+    val knessetFilter: (suspend (knesset: Int, lookups: LookupRepo) -> String?)? = null,
     val sorts: List<SortOption>,
     val filters: List<FilterDef> = emptyList(),
     val baseFilters: List<String> = emptyList(),

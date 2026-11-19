@@ -57,6 +57,11 @@ import com.chencohensolutions.knesset.ui.legislation.LawScreen
 import com.chencohensolutions.knesset.ui.legislation.LegislationScreen
 import com.chencohensolutions.knesset.ui.legislation.SecondaryLawScreen
 import androidx.navigation.toRoute
+import com.chencohensolutions.knesset.ui.plenum.MotionScreen
+import com.chencohensolutions.knesset.ui.plenum.PlenumScreen
+import com.chencohensolutions.knesset.ui.plenum.QuestionScreen
+import com.chencohensolutions.knesset.ui.plenum.SittingScreen
+import com.chencohensolutions.knesset.ui.plenum.VoteScreen
 import com.chencohensolutions.knesset.ui.people.FactionScreen
 import com.chencohensolutions.knesset.ui.people.MemberScreen
 import com.chencohensolutions.knesset.ui.people.MinistryScreen
@@ -129,7 +134,11 @@ private fun MainScaffold() {
             composable<BillRoute> { BillScreen(it.toRoute<BillRoute>().id) }
             composable<LawRoute> { LawScreen(it.toRoute<LawRoute>().id) }
             composable<SecondaryLawRoute> { SecondaryLawScreen(it.toRoute<SecondaryLawRoute>().id) }
-            composable<PlenumRoute> { Placeholder(Res.string.tab_plenum) }
+            composable<PlenumRoute> { PlenumScreen() }
+            composable<VoteRoute> { VoteScreen(it.toRoute<VoteRoute>().id) }
+            composable<SittingRoute> { SittingScreen(it.toRoute<SittingRoute>().id) }
+            composable<MotionRoute> { MotionScreen(it.toRoute<MotionRoute>().id) }
+            composable<QuestionRoute> { QuestionScreen(it.toRoute<QuestionRoute>().id) }
             composable<CommitteesRoute> { Placeholder(Res.string.tab_committees) }
             composable<PeopleRoute> { PeopleScreen() }
             composable<MemberRoute> { MemberScreen(it.toRoute<MemberRoute>().id) }
