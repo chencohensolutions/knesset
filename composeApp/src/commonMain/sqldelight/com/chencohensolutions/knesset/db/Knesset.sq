@@ -1,0 +1,80 @@
+CREATE TABLE http_cache (
+    url TEXT NOT NULL PRIMARY KEY,
+    body TEXT NOT NULL,
+    fetched_at INTEGER NOT NULL
+);
+
+CREATE INDEX http_cache_fetched_at ON http_cache(fetched_at);
+
+CREATE TABLE favorite (
+    kind TEXT NOT NULL,
+    id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    added_at INTEGER NOT NULL,
+    seen_updated_at INTEGER,
+    latest_updated_at INTEGER,
+    PRIMARY KEY (kind, id)
+);
+
+CREATE TABLE recent_search (
+    text TEXT NOT NULL PRIMARY KEY,
+    used_at INTEGER NOT NULL
+);
+
+-- http_cache
+
+cacheGet:
+SELECT body, fetched_at FROM http_cache WHERE url = ?;
+
+cachePut:
+INSERT OR REPLACE INTO http_cache(url, body, fetched_at) VALUES (?, ?, ?);
+
+cacheTotalSize:
+SELECT COALESCE(SUM(LENGTH(CAST(body AS BLOB))), 0) FROM http_cache;
+
+cacheCount:
+SELECT COUNT(*) FROM http_cache;
+
+cacheDeleteOldest:
+DELETE FROM http_cache WHERE url IN (SELECT url FROM http_cache ORDER BY fetched_at ASC LIMIT ?);
+
+cacheClear:
+DELETE FROM http_cache;
+
+-- favorite
+
+favoriteAll:
+SELECT * FROM favorite ORDER BY added_at DESC;
+
+favoriteGet:
+SELECT * FROM favorite WHERE kind = ? AND id = ?;
+
+favoritePut:
+INSERT OR REPLACE INTO favorite(kind, id, title, subtitle, added_at, seen_updated_at, latest_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+favoriteDelete:
+DELETE FROM favorite WHERE kind = ? AND id = ?;
+
+favoriteMarkSeen:
+UPDATE favorite SET seen_updated_at = latest_updated_at WHERE kind = ? AND id = ?;
+
+favoriteSetLatest:
+UPDATE favorite SET latest_updated_at = ? WHERE kind = ? AND id = ?;
+
+favoriteSetSeen:
+UPDATE favorite SET seen_updated_at = ?, latest_updated_at = ? WHERE kind = ? AND id = ?;
+
+-- recent_search
+
+recentAll:
+SELECT text FROM recent_search ORDER BY used_at DESC LIMIT 10;
+
+recentPut:
+INSERT OR REPLACE INTO recent_search(text, used_at) VALUES (?, ?);
+
+recentTrim:
+DELETE FROM recent_search WHERE text NOT IN (SELECT text FROM recent_search ORDER BY used_at DESC LIMIT 10);
+
+recentClear:
+DELETE FROM recent_search;

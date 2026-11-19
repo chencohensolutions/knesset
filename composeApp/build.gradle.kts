@@ -141,6 +141,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    sourceSets["test"].resources.srcDir("src/commonTest/resources")
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }

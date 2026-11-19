@@ -1,6 +1,24 @@
 package com.chencohensolutions.knesset.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chencohensolutions.knesset.data.repo.KnessetContext
+import com.chencohensolutions.knesset.resources.startup_failed
+import com.chencohensolutions.knesset.resources.search
+import com.chencohensolutions.knesset.resources.favorites
+import com.chencohensolutions.knesset.resources.data_explorer
+import com.chencohensolutions.knesset.resources.about
+import com.chencohensolutions.knesset.ui.components.ErrorState
+import com.chencohensolutions.knesset.ui.components.LoadingState
+import com.chencohensolutions.knesset.ui.components.RootTopBar
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -50,6 +68,24 @@ private val tabs = listOf(
 
 @Composable
 fun AppNavHost() {
+    val ctx = koinInject<KnessetContext>()
+    val startup by ctx.startup.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(Unit) { if (startup !is KnessetContext.Startup.Ready) ctx.start() }
+    when (val s = startup) {
+        KnessetContext.Startup.Loading -> Scaffold { LoadingState(Modifier.padding(it).fillMaxSize()) }
+        is KnessetContext.Startup.Failed -> Scaffold { padding ->
+            Column(Modifier.padding(padding).fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(stringResource(Res.string.startup_failed), style = MaterialTheme.typography.titleMedium)
+                ErrorState(s.error, onRetry = { scope.launch { ctx.start() } }, modifier = Modifier)
+            }
+        }
+        KnessetContext.Startup.Ready -> MainScaffold()
+    }
+}
+
+@Composable
+private fun MainScaffold() {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
@@ -77,20 +113,28 @@ fun AppNavHost() {
             }
         },
     ) { padding ->
+      CompositionLocalProvider(LocalNav provides nav) {
         NavHost(nav, startDestination = HomeRoute, modifier = Modifier.padding(bottom = padding.calculateBottomPadding())) {
             composable<HomeRoute> { Placeholder(Res.string.tab_home) }
             composable<LegislationRoute> { Placeholder(Res.string.tab_legislation) }
             composable<PlenumRoute> { Placeholder(Res.string.tab_plenum) }
             composable<CommitteesRoute> { Placeholder(Res.string.tab_committees) }
             composable<PeopleRoute> { Placeholder(Res.string.tab_people) }
+            composable<SearchRoute> { Placeholder(Res.string.search) }
+            composable<FavoritesRoute> { Placeholder(Res.string.favorites) }
+            composable<ExplorerRoute> { Placeholder(Res.string.data_explorer) }
+            composable<AboutRoute> { Placeholder(Res.string.about) }
             composable<SettingsRoute> { SettingsScreen(onBack = { nav.popBackStack() }) }
         }
+      }
     }
 }
 
 @Composable
 private fun Placeholder(title: StringResource) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(stringResource(title) + " · " + stringResource(Res.string.coming_soon))
+    Scaffold(topBar = { RootTopBar(stringResource(title)) }) { padding ->
+        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(stringResource(title) + " · " + stringResource(Res.string.coming_soon))
+        }
     }
 }

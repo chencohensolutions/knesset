@@ -16,4 +16,26 @@
     <string name="theme_dark">Dark</string>
     <string name="back">Back</string>
     <string name="coming_soon">Coming soon</string>
+    <string name="knesset_n">Knesset %1$s</string>
+    <string name="knesset_all">All Knessets</string>
+    <string name="search">Search</string>
+    <string name="favorites">Favorites</string>
+    <string name="data_explorer">Data Explorer</string>
+    <string name="about">About</string>
+    <string name="more">More</string>
+    <string name="error_offline">No network connection</string>
+    <string name="error_blocked">The Knesset site is not reachable from this location right now</string>
+    <string name="error_rate">The server is busy, try again in a moment</string>
+    <string name="error_not_found">Item not found</string>
+    <string name="error_server">Server error (%1$s)</string>
+    <string name="error_parse">Unexpected data received</string>
+    <string name="retry">Retry</string>
+    <string name="empty">No results</string>
+    <string name="offline_banner">Showing saved data, no connection</string>
+    <string name="loading">Loading…</string>
+    <string name="startup_failed">Could not load Knesset data</string>
+    <string name="settings_default_knesset">Default Knesset</string>
+    <string name="default_knesset_current">Current Knesset</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="cache_cleared">Cache cleared</string>
 </resources>

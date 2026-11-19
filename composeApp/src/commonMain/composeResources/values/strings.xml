@@ -16,4 +16,26 @@
     <string name="theme_dark">כהה</string>
     <string name="back">חזרה</string>
     <string name="coming_soon">בקרוב</string>
+    <string name="knesset_n">הכנסת ה-%1$s</string>
+    <string name="knesset_all">כל הכנסות</string>
+    <string name="search">חיפוש</string>
+    <string name="favorites">מועדפים</string>
+    <string name="data_explorer">סייר הנתונים</string>
+    <string name="about">אודות</string>
+    <string name="more">עוד</string>
+    <string name="error_offline">אין חיבור לרשת</string>
+    <string name="error_blocked">אתר הכנסת אינו זמין כרגע מהמיקום הזה</string>
+    <string name="error_rate">השרת עמוס, נסו שוב בעוד רגע</string>
+    <string name="error_not_found">הפריט לא נמצא</string>
+    <string name="error_server">שגיאת שרת (%1$s)</string>
+    <string name="error_parse">התקבלו נתונים לא צפויים</string>
+    <string name="retry">נסו שוב</string>
+    <string name="empty">לא נמצאו תוצאות</string>
+    <string name="offline_banner">מוצגים נתונים שמורים, אין חיבור</string>
+    <string name="loading">טוען…</string>
+    <string name="startup_failed">לא ניתן לטעון את נתוני הכנסת</string>
+    <string name="settings_default_knesset">כנסת ברירת מחדל</string>
+    <string name="default_knesset_current">הכנסת הנוכחית</string>
+    <string name="clear_cache">ניקוי מטמון</string>
+    <string name="cache_cleared">המטמון נוקה</string>
 </resources>
