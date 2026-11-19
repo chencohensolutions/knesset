@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.DownloadDone
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -245,6 +246,8 @@ private fun CommitteeVideos(vm: MemberVideosViewModel, s: MemberVideosState, p: 
             FilterChip(s.committee == m.committeeId, { vm.setCommittee(if (s.committee == m.committeeId) null else m.committeeId) }, { Text(m.committeeName, maxLines = 1) })
         }
     }
+    val downloadItems by koinInject<com.chencohensolutions.knesset.data.video.VideoDownloads>().items.collectAsStateWithLifecycle()
+    val downloadsDone = downloadItems.filter { it.state == com.chencohensolutions.knesset.data.video.DownloadState.DONE }.map { it.url }.toSet()
     val rows = p.items.filter { it.sessionId > 0 && (s.query.isBlank() || it.items.any { i -> i.contains(s.query.trim()) }) }
     when {
         committees.isEmpty() -> EmptyState()
@@ -257,7 +260,14 @@ private fun CommitteeVideos(vm: MemberVideosViewModel, s: MemberVideosState, p: 
                     title = r.committee,
                     subtitle = r.firstItem,
                     date = r.at?.let(IsraelTime::dateTime),
-                    trailing = { Icon(Icons.Outlined.PlayCircle, stringResource(Res.string.play), tint = MaterialTheme.colorScheme.primary) },
+                    trailing = {
+                        val saved = downloadsDone.contains(KnessetVodSource.streamUrl(r.sessionId))
+                        Icon(
+                            if (saved) Icons.Outlined.DownloadDone else Icons.Outlined.PlayCircle,
+                            stringResource(if (saved) Res.string.dl_done else Res.string.play),
+                            tint = if (saved) com.chencohensolutions.knesset.ui.theme.AppTheme.colors.positive else MaterialTheme.colorScheme.primary,
+                        )
+                    },
                     onClick = { play.committee(r.sessionId, r.committee, r.at) },
                 )
                 HorizontalDivider(Modifier.padding(horizontal = 16.dp))

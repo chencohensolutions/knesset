@@ -34,4 +34,6 @@ val androidModule = module {
     single<UrlOpener> { AndroidUrlOpener(get()) }
     single<Sharer> { AndroidSharer(get()) }
     single<AppInfo> { AndroidAppInfo() }
+    single { com.chencohensolutions.knesset.video.AndroidVideoDownloads(get()) }
+    single<com.chencohensolutions.knesset.data.video.VideoDownloads> { get<com.chencohensolutions.knesset.video.AndroidVideoDownloads>() }
 }

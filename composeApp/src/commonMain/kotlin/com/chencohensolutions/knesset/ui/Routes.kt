@@ -41,6 +41,7 @@ val LocalNav = staticCompositionLocalOf<NavHostController> { error("No NavContro
 @Serializable data class ExplorerSetRoute(val name: String)
 @Serializable data class ExplorerItemRoute(val name: String, val id: Int)
 @Serializable data object SettingsRoute
+@Serializable data object DownloadsRoute
 @Serializable data object AboutRoute
 
 /** Kinds of items that can be opened, starred and searched. */

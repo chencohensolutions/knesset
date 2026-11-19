@@ -26,6 +26,7 @@ import com.chencohensolutions.knesset.resources.Res
 import com.chencohensolutions.knesset.resources.about
 import com.chencohensolutions.knesset.resources.back
 import com.chencohensolutions.knesset.resources.data_explorer
+import com.chencohensolutions.knesset.resources.downloads
 import com.chencohensolutions.knesset.resources.favorites
 import com.chencohensolutions.knesset.resources.knesset_all
 import com.chencohensolutions.knesset.resources.knesset_n
@@ -80,6 +81,7 @@ fun RootTopBar(title: String) {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, stringResource(Res.string.more)) }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(Res.string.favorites)) }, onClick = { menu = false; nav.navigate(FavoritesRoute) })
+                    DropdownMenuItem(text = { Text(stringResource(Res.string.downloads)) }, onClick = { menu = false; nav.navigate(com.chencohensolutions.knesset.ui.DownloadsRoute) })
                     DropdownMenuItem(text = { Text(stringResource(Res.string.data_explorer)) }, onClick = { menu = false; nav.navigate(ExplorerRoute) })
                     DropdownMenuItem(text = { Text(stringResource(Res.string.settings)) }, onClick = { menu = false; nav.navigate(SettingsRoute) })
                     DropdownMenuItem(text = { Text(stringResource(Res.string.about)) }, onClick = { menu = false; nav.navigate(AboutRoute) })

@@ -82,6 +82,27 @@ import com.chencohensolutions.knesset.ui.people.PeopleScreen
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KClass
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
+import com.chencohensolutions.knesset.ui.components.FloatingNavBar
+import com.chencohensolutions.knesset.ui.components.NavItem
+import com.chencohensolutions.knesset.ui.theme.AppTheme
+import com.chencohensolutions.knesset.ui.theme.LocalSection
+import com.chencohensolutions.knesset.ui.theme.Motion
+import com.chencohensolutions.knesset.ui.theme.Section
 
 private data class Tab(val route: Any, val routeClass: KClass<*>, val label: StringResource, val icon: ImageVector)
 
@@ -111,66 +132,109 @@ fun AppNavHost() {
     }
 }
 
+/** The section hue for each destination (docs 2.1). */
+private fun sectionOf(entry: NavBackStackEntry?): Section {
+    val d = entry?.destination ?: return Section.HOME
+    fun has(vararg c: KClass<*>) = c.any { d.hasRoute(it) }
+    return when {
+        has(LegislationRoute::class, BillRoute::class, LawRoute::class, SecondaryLawRoute::class) -> Section.LEGISLATION
+        has(PlenumRoute::class, VoteRoute::class, SittingRoute::class, MotionRoute::class, QuestionRoute::class, VideoPlayerRoute::class) -> Section.PLENUM
+        has(CommitteesRoute::class, CommitteeRoute::class, CommitteeSessionRoute::class) -> Section.COMMITTEES
+        has(PeopleRoute::class, MemberRoute::class, FactionRoute::class, MinistryRoute::class, MemberVideosRoute::class, LobbyistRoute::class) -> Section.PEOPLE
+        else -> Section.HOME
+    }
+}
+
+private fun isTabRoot(entry: NavBackStackEntry): Boolean = tabs.any { entry.destination.hasRoute(it.routeClass) }
+
 @Composable
 private fun MainScaffold() {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val destination = entry?.destination
     val onTabRoot = tabs.any { tab -> destination?.hasRoute(tab.routeClass) == true }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val density = LocalDensity.current
+    val shift = with(density) { 30.dp.roundToPx() }
+    // A forward push starts offset toward the end side (the right in English, the left in Hebrew) and
+    // slides to place; back reverses it (docs 5.1).
+    val dir = if (rtl) -1 else 1
+    val emphasized = tween<Float>(Motion.MEDIUM, easing = Motion.emphasized)
+    val emphasizedInt = tween<androidx.compose.ui.unit.IntOffset>(Motion.MEDIUM, easing = Motion.emphasized)
     Scaffold(
+        containerColor = AppTheme.colors.background,
         bottomBar = {
-            if (onTabRoot) {
-                NavigationBar {
-                    tabs.forEach { tab ->
-                        val selected = destination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                nav.navigate(tab.route) {
-                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.label)) },
-                        )
-                    }
-                }
+            AnimatedVisibility(onTabRoot, enter = fadeIn() + slideInVertically { it }, exit = fadeOut() + slideOutVertically { it }) {
+                FloatingNavBar(tabs.mapIndexed { i, tab ->
+                    NavItem(
+                        label = stringResource(tab.label),
+                        icon = tab.icon,
+                        section = Section.entries[i],
+                        selected = destination?.hierarchy?.any { it.hasRoute(tab.routeClass) } == true,
+                        onClick = {
+                            nav.navigate(tab.route) {
+                                popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                    )
+                })
             }
         },
     ) { padding ->
       CompositionLocalProvider(LocalNav provides nav) {
-        NavHost(nav, startDestination = HomeRoute, modifier = Modifier.padding(bottom = padding.calculateBottomPadding())) {
-            composable<HomeRoute> { HomeScreen() }
-            composable<LegislationRoute> { LegislationScreen() }
-            composable<BillRoute> { BillScreen(it.toRoute<BillRoute>().id) }
-            composable<LawRoute> { LawScreen(it.toRoute<LawRoute>().id) }
-            composable<SecondaryLawRoute> { SecondaryLawScreen(it.toRoute<SecondaryLawRoute>().id) }
-            composable<PlenumRoute> { PlenumScreen() }
-            composable<VoteRoute> { VoteScreen(it.toRoute<VoteRoute>().id) }
-            composable<SittingRoute> { SittingScreen(it.toRoute<SittingRoute>().id) }
-            composable<MotionRoute> { MotionScreen(it.toRoute<MotionRoute>().id) }
-            composable<QuestionRoute> { QuestionScreen(it.toRoute<QuestionRoute>().id) }
-            composable<CommitteesRoute> { CommitteesScreen() }
-            composable<CommitteeRoute> { CommitteeScreen(it.toRoute<CommitteeRoute>().id) }
-            composable<CommitteeSessionRoute> { CommitteeSessionScreen(it.toRoute<CommitteeSessionRoute>().id) }
-            composable<PeopleRoute> { PeopleScreen() }
-            composable<MemberRoute> { MemberScreen(it.toRoute<MemberRoute>().id) }
-            composable<MemberVideosRoute> { MemberVideosScreen(it.toRoute<MemberVideosRoute>().id) }
-            composable<VideoPlayerRoute> { val r = it.toRoute<VideoPlayerRoute>(); VideoPlayerScreen(r.url, r.title, r.fallbackUrl) }
-            composable<FactionRoute> { FactionScreen(it.toRoute<FactionRoute>().id) }
-            composable<MinistryRoute> { MinistryScreen(it.toRoute<MinistryRoute>().id) }
-            composable<SearchRoute> { SearchScreen(it.toRoute<SearchRoute>().query) }
-            composable<KindListRoute> { val r = it.toRoute<KindListRoute>(); KindListScreen(r.kind, r.query) }
-            composable<FavoritesRoute> { FavoritesScreen() }
-            composable<ExplorerRoute> { ExplorerScreen() }
-            composable<ExplorerSetRoute> { ExplorerSetScreen(it.toRoute<ExplorerSetRoute>().name) }
-            composable<ExplorerItemRoute> { val r = it.toRoute<ExplorerItemRoute>(); ExplorerItemScreen(r.name, r.id) }
-            composable<AboutRoute> { AboutScreen() }
-            composable<LobbyistRoute> { LobbyistScreen(it.toRoute<LobbyistRoute>().id) }
-            composable<SettingsRoute> { SettingsScreen(onBack = { nav.popBackStack() }) }
+        NavHost(
+            nav, startDestination = HomeRoute,
+            modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
+            enterTransition = {
+                if (isTabRoot(initialState) && isTabRoot(targetState)) fadeIn(tween(210, delayMillis = 90)) + scaleIn(tween(210, delayMillis = 90), initialScale = 0.96f)
+                else slideInHorizontally(emphasizedInt) { dir * shift } + fadeIn(emphasized)
+            },
+            exitTransition = {
+                if (isTabRoot(initialState) && isTabRoot(targetState)) fadeOut(tween(90))
+                else slideOutHorizontally(emphasizedInt) { -dir * shift } + fadeOut(emphasized)
+            },
+            popEnterTransition = { slideInHorizontally(emphasizedInt) { -dir * shift } + fadeIn(emphasized) },
+            popExitTransition = { slideOutHorizontally(emphasizedInt) { dir * shift } + fadeOut(emphasized) },
+        ) {
+            screen<HomeRoute> { HomeScreen() }
+            screen<LegislationRoute> { LegislationScreen() }
+            screen<BillRoute> { BillScreen(it.toRoute<BillRoute>().id) }
+            screen<LawRoute> { LawScreen(it.toRoute<LawRoute>().id) }
+            screen<SecondaryLawRoute> { SecondaryLawScreen(it.toRoute<SecondaryLawRoute>().id) }
+            screen<PlenumRoute> { PlenumScreen() }
+            screen<VoteRoute> { VoteScreen(it.toRoute<VoteRoute>().id) }
+            screen<SittingRoute> { SittingScreen(it.toRoute<SittingRoute>().id) }
+            screen<MotionRoute> { MotionScreen(it.toRoute<MotionRoute>().id) }
+            screen<QuestionRoute> { QuestionScreen(it.toRoute<QuestionRoute>().id) }
+            screen<CommitteesRoute> { CommitteesScreen() }
+            screen<CommitteeRoute> { CommitteeScreen(it.toRoute<CommitteeRoute>().id) }
+            screen<CommitteeSessionRoute> { CommitteeSessionScreen(it.toRoute<CommitteeSessionRoute>().id) }
+            screen<PeopleRoute> { PeopleScreen() }
+            screen<MemberRoute> { MemberScreen(it.toRoute<MemberRoute>().id) }
+            screen<MemberVideosRoute> { MemberVideosScreen(it.toRoute<MemberVideosRoute>().id) }
+            screen<VideoPlayerRoute> { val r = it.toRoute<VideoPlayerRoute>(); VideoPlayerScreen(r.url, r.title, r.fallbackUrl) }
+            screen<FactionRoute> { FactionScreen(it.toRoute<FactionRoute>().id) }
+            screen<MinistryRoute> { MinistryScreen(it.toRoute<MinistryRoute>().id) }
+            screen<SearchRoute> { SearchScreen(it.toRoute<SearchRoute>().query) }
+            screen<KindListRoute> { val r = it.toRoute<KindListRoute>(); KindListScreen(r.kind, r.query) }
+            screen<FavoritesRoute> { FavoritesScreen() }
+            screen<ExplorerRoute> { ExplorerScreen() }
+            screen<ExplorerSetRoute> { ExplorerSetScreen(it.toRoute<ExplorerSetRoute>().name) }
+            screen<ExplorerItemRoute> { val r = it.toRoute<ExplorerItemRoute>(); ExplorerItemScreen(r.name, r.id) }
+            screen<AboutRoute> { AboutScreen() }
+            screen<DownloadsRoute> { com.chencohensolutions.knesset.ui.video.DownloadsScreen() }
+            screen<LobbyistRoute> { LobbyistScreen(it.toRoute<LobbyistRoute>().id) }
+            screen<SettingsRoute> { SettingsScreen(onBack = { nav.popBackStack() }) }
         }
       }
+    }
+}
+
+/** A destination that provides its section hue to everything inside it. */
+private inline fun <reified T : Any> NavGraphBuilder.screen(noinline content: @Composable (NavBackStackEntry) -> Unit) {
+    composable<T> { entry ->
+        CompositionLocalProvider(LocalSection provides sectionOf(entry)) { content(entry) }
     }
 }

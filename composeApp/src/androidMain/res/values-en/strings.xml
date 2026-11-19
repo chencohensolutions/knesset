@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Knesset</string>
+    <string name="downloads_channel">Video downloads</string>
+    <string name="downloading_video">Downloading video</string>
+    <string name="cancel_download">Cancel</string>
+</resources>

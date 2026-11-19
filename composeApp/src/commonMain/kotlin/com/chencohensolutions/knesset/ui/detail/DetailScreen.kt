@@ -200,9 +200,11 @@ private fun SectionCard(section: Section) {
                     Collapsible(section.items.size) { limit ->
                         section.items.take(limit).forEachIndexed { i, item ->
                             if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                            val video = item.route as? com.chencohensolutions.knesset.ui.VideoPlayerRoute
                             ItemRow(
                                 localized(item.title), item.subtitle, item.status, initials = item.initials, route = item.route, url = item.url,
                                 below = item.bar?.let { b -> { VoteBar(b.first, b.second, b.third) } },
+                                trailing = video?.let { v -> { com.chencohensolutions.knesset.ui.video.DownloadIconButton(v.url, item.title) } },
                             )
                         }
                     }

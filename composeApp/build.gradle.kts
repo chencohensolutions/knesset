@@ -52,6 +52,7 @@ kotlin {
             implementation(libs.media3.exoplayer)
             implementation(libs.media3.hls)
             implementation(libs.media3.ui)
+            implementation(libs.media3.transformer)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
