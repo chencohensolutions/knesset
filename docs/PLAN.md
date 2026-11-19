@@ -1,6 +1,6 @@
 # Knesset app: API research, UX design and implementation plan
 
-Status: plan only. Nothing in this document is implemented yet.
+Status: implemented on branch `claude/knesset-app`. Section 7 items were checked against the live API on 2026-11-19 (see 1.6).
 Target: a Kotlin Multiplatform app (Compose Multiplatform UI) that ships for Android first.
 Audience: the engineer (or agent) who implements the app.
 
@@ -13,6 +13,7 @@ Contents
 5. Milestones with acceptance criteria
 6. Build, CI and getting the APK onto a phone
 7. Risks and open questions
+8. Videos by member (M9)
 
 Legend used throughout: **[verified]** means observed in a live response on 2026-11-19. **[unverified]** means inferred from metadata or prior knowledge and must be checked by the implementer against the live API before relying on it.
 
@@ -42,16 +43,20 @@ All **[verified]** unless marked.
 - Metadata: `GET /$metadata` returns EDMX XML, namespace `OdataService.DAL.ParliamentInfo`. No functions or actions.
 - Collection response: `{"@odata.context": "...", "@odata.count": N (only when asked), "value": [...], "@odata.nextLink": "..." (only when more rows exist)}`.
 - Single entity: `GET /KNS_Bill(5)` returns the entity fields at top level, with no `value` wrapper.
+- **A by-key GET with a collection `$expand` fails with HTTP 500** (`KNS_Bill(2229019)?$expand=KNS_BillInitiator`, also `KNS_DocumentBill`, `KNS_BillName`, and `KNS_PlenumVote(id)?$expand=VoteResults`). Single-valued expands (`KNS_Status`, `KNS_Committee`) work by key. The same collection expands work on a filtered collection: `KNS_Bill?$filter=Id eq 2229019&$expand=...`. **Detail screens always use `$filter=Id eq X`, never the key form.** [verified]
 - Every entity type has the integer key `Id` (v3 used `BillID`, `PersonID`, and so on). Foreign keys keep their long names (`BillID`, `PersonID`, `CommitteeID`).
 - **Server page cap is 100 rows.** `$top=150` returns 100 rows plus a `nextLink`. A request with no `$top` returns 100 rows and `nextLink` of the form `...?$skip=100`.
 - `nextLink` is quirky: for `$skip=100&$top=150` it returned `$top=50&$skip=200`, and it drops `$count`. **Do not follow `nextLink`. Page with explicit `$top` and `$skip`.**
-- Supported and verified query options: `$filter` (`eq`, `and`, `contains(Field,'text')`, `ne null` **[unverified]**), `$orderby ... desc`, `$top`, `$skip`, `$select`, `$count=true`, `$expand` (single, collection, nested like `KNS_BillInitiator($expand=KNS_Person)`, and with options like `VoteResults($top=3)`).
+- Supported and verified query options: `$filter` (`eq`, `and`, `or`, `ne`, `gt`, `lt`, `contains(Field,'text')`, `ne null`), `$orderby ... desc`, `$top`, `$skip`, `$select`, `$count=true`, `$expand` (single, collection, nested like `KNS_BillInitiator($expand=KNS_Person)`, and with options like `VoteResults($top=3)`, `KNS_BillInitiator($orderby=Ordinal)`, on collection requests only).
+- Some expands and all `any()`/`all()` lambdas are refused with **HTTP 473**: `KNS_Bill?$filter=KNS_BillInitiator/any(i:i/PersonID eq P)` and `KNS_Committee?$expand=KNS_JointCommittee($expand=KNS_CommitteeParticipant)`. Query the join tables directly instead (`KNS_BillInitiator?$filter=PersonID eq P`, `KNS_JointCommittee?$filter=CommitteeID eq C or ParticipantCommitteeID eq C`). The bills list therefore has no "initiator" filter; bills per member are on the member screen. [verified]
+- Expanded collections are cut at 100 rows (`ועדת הכספים` of Knesset 25 expanded exactly 100 `KNS_CommitteeSession` rows). Fetch long collections as their own paged query.
 - Dates are ISO 8601 with an Israel offset that follows DST, for example `2026-11-16T13:01:33.717+02:00` and `2026-07-28T00:00:00+03:00`. Fractional seconds have variable length (0 to 3 digits). Date-only values are midnight local time.
 - Text is Hebrew, raw UTF-8. **The API has no language parameter and no translations.** All names and descriptions are Hebrew only.
 - Nulls are common on almost every field. Treat every non-key field as nullable.
 - **Geo restriction:** one request from outside Israel returned HTTP 200 with a short `text/html` page saying the site is temporarily inaccessible from that location. The client must treat a non-JSON 200 as an error of kind "blocked by location".
 - **Rate limiting:** bursts of parallel requests were refused. Keep concurrency low (see 3.4).
-- `V_Lobbyists` and `V_LobbyistsClients` are listed in the service document, but both test requests failed with a 4xx. Treat lobbyists as an optional feature that hides itself when the endpoint fails. **[unverified]**
+- `V_Lobbyists` and `V_LobbyistsClients` are listed in the service document and in `$metadata` (types `OdataService.DAL.Lobbyist.V_Lobbyist` and `V_LobbyistsClient`), but every request returns **HTTP 404 with an empty body**, with or without `$select`. Lobbyists stay an optional feature that hides itself when the endpoint fails. [verified]
+- An unknown entity set returns HTTP 404 with an empty body. [verified]
 
 ### 1.3 Entity catalogue (v4)
 
@@ -61,7 +66,7 @@ Row counts are from `$count=true` on 2026-11-19 where shown.
 
 | Entity set | Key fields | Notes |
 |---|---|---|
-| `KNS_Bill` (60,291) | KnessetNum, Name, TypeID/TypeDesc, SubTypeID/SubTypeDesc (פרטית, ממשלתית, ועדה), PrivateNumber, Number, CommitteeID, StatusID, PostponementReasonID/Desc, PublicationDate, PublicationSeriesID/Desc, PublicationSeriesFirstCallID/Desc, MagazineNumber (string), PageNumber (string), IsContinuationBill, SummaryLaw, LastUpdatedDate | Nav: KNS_BillInitiator, KNS_BillHistoryInitiator, KNS_BillName, KNS_BillSplit, KNS_BillUnion, KNS_BillUnion_Main, KNS_DocumentBill, KNS_LawCorrections, KNS_Committee, KNS_Status |
+| `KNS_Bill` (60,291) | KnessetNum, Name, TypeID/TypeDesc, SubTypeID/SubTypeDesc (פרטית, ממשלתית, ועדה), PrivateNumber, Number, CommitteeID, StatusID, PostponementReasonID/Desc, PublicationDate, PublicationSeriesID/Desc, PublicationSeriesFirstCallID/Desc, MagazineNumber (string), PageNumber (string), IsContinuationBill, SummaryLaw, LastUpdatedDate | Nav: KNS_BillInitiator, KNS_BillHistoryInitiator, KNS_BillName, KNS_BillSplit, KNS_BillUnion, KNS_BillUnion_Main, KNS_DocumentBill, KNS_LawCorrections, KNS_Committee, KNS_Status. `CommitteeID` is -1 when there is no committee [verified] |
 | `KNS_BillInitiator` | BillID, PersonID, IsInitiator, Ordinal | IsInitiator true means initiator, false means joined signer. Nav: KNS_Bill, KNS_Person |
 | `KNS_BillHistoryInitiator` | BillID, PersonID, IsInitiator, StartDate, EndDate, ReasonID/Desc | Initiators who left or were replaced |
 | `KNS_BillName` | BillID, Name, NameHistoryTypeID/Desc | Name history of a bill |
@@ -91,7 +96,7 @@ Row counts are from `$count=true` on 2026-11-19 where shown.
 | `KNS_PlmSessionItem` | ItemID, PlenumSessionID, ItemTypeID/Desc, Ordinal, Name, StatusID, IsDiscussion | Agenda of a sitting. `ItemTypeID` + `ItemID` point to a bill, query, motion and so on (see KNS_ItemType) |
 | `KNS_DocumentPlenumSession` | PlenumSessionID, GroupTypeDesc (for example "דברי הכנסת"), ApplicationDesc, FilePath | Protocols |
 | `KNS_PlenumVote` (36,171) | VoteDateTime, SessionID, ItemID, Ordinal, VoteMethodID/Desc (1 אלקטרונית, 2 שמית), VoteStatusCode/Desc (7 מפורסם), VoteTitle, VoteSubject, IsNoConfidenceInGov, ForOptionID/Desc, AgainstOptionID/Desc | Nav: KNS_PlenumSession, `VoteResults` (collection) |
-| `KNS_PlenumVoteResult` (1,953,990) | MkId, VoteID, VoteDate, ResultCode/ResultDesc (seen: 7 בעד, 6 נוכח; others exist), LastName, FirstName, SessionID, ItemID | Nav: `Vote`, KNS_Person. `MkId` is the person id **[unverified, strongly implied by the KNS_Person navigation]** |
+| `KNS_PlenumVoteResult` (1,953,990) | MkId, VoteID, VoteDate, ResultCode/ResultDesc, LastName, FirstName, SessionID, ItemID | Nav: `Vote`, KNS_Person. `MkId` is `KNS_Person.Id` [verified]. The full set of `ResultCode` values is 6 נוכח, 7 בעד, 8 נגד, 9 נמנע, 10 לא נכח/ אינו נוכח, 11 הצביע (secret ballot) [verified: no code below 6 or above 11 exists]. Some votes list only part of the members (vote 46700 has 5 rows, all בעד), so a tally reflects the published rows only |
 | `KNS_Agenda` (22,072) | Number, KnessetNum, Name, ClassificationID/Desc, SubTypeID/Desc (for example "דיון מהיר"), StatusID, InitiatorPersonID, LeadingAgendaID, GovRecommendationID/Desc, PresidentDecisionDate, PostopenmentReasonID/Desc (sic), CommitteeID, RecommendCommitteeID, MinisterPersonID | Motions for the agenda. Nav: KNS_DocumentAgenda, KNS_Committee, KNS_RecommendCommittee, KNS_Person, KNS_PersonMinister, KNS_Status |
 | `KNS_DocumentAgenda` | AgendaID, GroupType, Application, FilePath | |
 | `KNS_Query` (42,824) | Number, KnessetNum, Name, TypeID/TypeDesc (for example "דחופה"), StatusID, PersonID, GovMinistryID, SubmitDate, ReplyMinisterDate, ReplyDatePlanned | Parliamentary questions. Nav: KNS_Person, KNS_GovMinistry, KNS_Status, KNS_DocumentQuery |
@@ -118,7 +123,7 @@ Row counts are from `$count=true` on 2026-11-19 where shown.
 | `KNS_Position` | Description, GenderID/Desc | Lookup of positions |
 | `KNS_Faction` (12 current) | Name, KnessetNum, StartDate, FinishDate, IsCurrent | Contains a placeholder row (Id 911, "אין נתונים", KnessetNum 1). Filter on KnessetNum as well |
 | `KNS_GovMinistry` | Name, IsActive, CategoryID/Name, GovID | |
-| `KNS_MkSiteCode` | KnsID, SiteId | Maps a person id to the MK id on the public website |
+| `KNS_MkSiteCode` (1,162) | KnsID, SiteId | Maps a person id to the MK id on the public website. Not every person has a row (KNS_Person 30300 has none) |
 | `V_Lobbyists` | IdentityNumber, FullName, PermitTypeValue, Key, CorporationName, IsIndependent, CorpNumber, PracticeFramework, IsMemberInFaction, MemberInFaction | **[unverified]** fields from a summarized metadata tail, endpoint failed in tests. **Never display `IdentityNumber`.** |
 | `V_LobbyistsClients` | LobbyistID, ClientID, Name, ClientsNames | **[unverified]** |
 
@@ -149,20 +154,22 @@ Factions:             KNS_Faction?$filter=KnessetNum eq K&$orderby=Name
 Person roles:         KNS_PersonToPosition?$filter=PersonID eq P&$orderby=StartDate desc&$expand=KNS_Position
 Bills list:           KNS_Bill?$filter=KnessetNum eq K&$orderby=LastUpdatedDate desc&$top=50&$skip=0&$count=true&$select=Id,Name,SubTypeDesc,StatusID,LastUpdatedDate,KnessetNum
 Bill search:          ...$filter=contains(Name,'חינוך') and KnessetNum eq K
-Bill detail:          KNS_Bill(ID)?$expand=KNS_BillInitiator($expand=KNS_Person),KNS_Status,KNS_Committee,KNS_DocumentBill,KNS_BillName
+Bill detail:          KNS_Bill?$filter=Id eq ID&$expand=KNS_BillInitiator($expand=KNS_Person),KNS_Status,KNS_Committee,KNS_DocumentBill,KNS_BillName
 Bills by MK:          KNS_BillInitiator?$filter=PersonID eq P&$expand=KNS_Bill&$orderby=Id desc
 Votes list:           KNS_PlenumVote?$orderby=VoteDateTime desc&$top=50&$count=true
 Votes of a sitting:   KNS_PlenumVote?$filter=SessionID eq S&$orderby=Ordinal
 Vote breakdown:       KNS_PlenumVoteResult?$filter=VoteID eq V&$top=100&$skip=0   (2 pages, up to 120 rows)
 MK voting record:     KNS_PlenumVoteResult?$filter=MkId eq P&$orderby=VoteDate desc&$expand=Vote&$top=50
 Plenum sittings:      KNS_PlenumSession?$filter=KnessetNum eq K&$orderby=StartDate desc
-Sitting detail:       KNS_PlenumSession(ID)?$expand=KNS_PlmSessionItem,KNS_DocumentPlenumSession
+Sitting detail:       KNS_PlenumSession?$filter=Id eq ID&$expand=KNS_PlmSessionItem,KNS_DocumentPlenumSession
 Committee sessions:   KNS_CommitteeSession?$filter=CommitteeID eq C&$orderby=StartDate desc&$expand=KNS_CmtSessionItem
 Upcoming sessions:    KNS_CommitteeSession?$filter=StartDate ge 2026-11-19T00:00:00%2B02:00&$orderby=StartDate&$expand=KNS_Committee
 Queries by ministry:  KNS_Query?$filter=GovMinistryID eq M and KnessetNum eq K&$orderby=SubmitDate desc
 ```
 
-The date literal form in `$filter` (`StartDate ge <DateTimeOffset>`) is **[unverified]**. Verify first. The `+` in the offset must be encoded as `%2B`.
+The date literal form in `$filter` (`StartDate ge 2026-11-19T00:00:00%2B02:00`) works [verified]. The `+` in the offset must be encoded as `%2B`.
+
+The members query returns duplicates: Knesset 26 gave 125 rows for 95 distinct people on the first page, with `PositionID` 54 and 48. De-duplicate by `PersonID`.
 
 ---
 
@@ -381,7 +388,7 @@ A single `ItemRef(itemTypeId, itemId)` resolver maps agenda items and vote items
 ### 3.7 Links to the public website
 
 - Committee session: `SessionUrl` from the data (upgrade to https).
-- Member page: built from `KNS_MkSiteCode.SiteId`. The URL template must be confirmed on the live site before it ships. **[unverified]** If unconfirmed, omit the button.
+- Member page: `https://main.knesset.gov.il/mk/apps/mk/mk-personal-details/{SiteId}` with `SiteId` from `KNS_MkSiteCode`. [verified: the site's own API `WebSiteApi/knessetapi/MKs/GetMkdetailsHeader?mkId=69` returns ישראל כץ, matching `KnsID` 468, and 928 returns אלי כהן for `KnsID` 30083.] When a person has no site code, the button is hidden.
 - Share action: item title plus the best available link (document URL or site URL), otherwise the title only.
 
 ---
@@ -481,7 +488,10 @@ Accept: every entity set in the service document opens in the explorer. With the
 
 **M8. Release.** Signed APK from CI attached to a GitHub Release, short README with install steps and screenshots.
 
-Testing approach: all network tests use `MockEngine` with JSON fixtures stored in `commonTest/resources`. No test calls the live API. Fixtures are captured from the live service by someone who can reach it (see 7).
+**M9. Videos by member.** See section 8.
+Accept: a member's committee sessions with a broadcast are listed newest first and play in the app; a plenum sitting shows the Knesset Channel videos of its day when they exist; the UI says plainly that membership is not attendance.
+
+Testing approach: all network tests use `MockEngine` with JSON fixtures stored in `commonTest/resources`. No test calls the live API. Fixtures were captured from the live service on 2026-11-19 and live in `composeApp/src/commonTest/resources/fixtures/`.
 
 ---
 
@@ -499,8 +509,39 @@ Testing approach: all network tests use `MockEngine` with JSON fixtures stored i
 1. **Geo restriction.** The API answered at least one foreign request with a "not accessible from your location" page. The app is expected to work on a phone in Israel. Abroad, it will show the blocked state. Cloud build machines and cloud agents may not reach the API at all.
 2. **Implementation sandbox access.** The cloud environment used for planning could not reach `knesset.gov.il` directly. The implementer needs either that host allowed in the environment's network settings, or fixtures captured from a machine in Israel. Without one of those, live behavior cannot be verified before the app reaches the phone.
 3. **Lobbyist endpoints** failed with 4xx in tests. The feature must hide itself on failure.
-4. **Unverified items** to confirm early in M1: date literals in `$filter`, `ne null` filters, `MkId` equals person id, the full set of `ResultCode` values, the member page URL template, and the nested `$expand` cap (whether an expanded collection is also cut at 100 rows).
+4. **Formerly unverified items**, all checked on 2026-11-19 (see 1.2, 1.3, 1.5, 3.7): date literals and `ne null` work; `MkId` is the person id; result codes are 6 to 11; the member page template is confirmed; expanded collections are cut at 100 rows; by-key GETs fail with collection expands.
 5. **Data quality.** Placeholder rows ("אין נתונים"), null descriptions, `IsCurrent` flags that are too generous, names in email fields, typos in entity names. The data layer must tolerate all of them.
 6. **Large tables.** Vote results have about 2 million rows. Always filter by `VoteID` or `MkId`, never list unfiltered outside the Data Explorer, and there only page by page.
 7. **Schema drift.** The service changes without notice (v4 already differs from v3). Unknown JSON keys are ignored and the Data Explorer reads names from the live service document, so new entity sets appear without an app update.
 8. **Privacy.** The API exposes emails of people and an identity number for lobbyists. Show official emails only on a person's own detail screen, and never fetch or show identity numbers.
+
+---
+
+## 8. Videos by member (M9)
+
+Added at hen's request on 2026-11-19. Research spec: `docs/VIDEOS-BY-MEMBER-SPEC.md` on branch `claude/project-thread-8972i9`. Everything below was checked from a Mac in Israel on 2026-11-19.
+
+### 8.1 Sources
+
+| Source | What | Verified |
+|---|---|---|
+| Knesset video server | `https://video.knesset.gov.il/KnsVod/_definst_/mp4:archive/CMT/CmtSession_{KNS_CommitteeSession.Id}.mp4/playlist.m3u8` (HLS, 640x360; `manifest.mpd` for DASH) | 200 for sessions 2220560, 2200051 (Jan 2023), 2160889 (Aug 2021), 2140056 (Jun 2020). 404 for Mar 2019 and older, for future sessions, and for some recent ones (for example 2235063, Foreign Affairs and Defense, Oct 2025). The archive starts between March 2019 and June 2020. |
+| `KNS_BroadcastCommitteSession` | `Id` = committee session id; `BroadcastUrl` = the session's page on main.knesset.gov.il (`CommitteeTVarchive.aspx?TopicID=…`) | 20,576 rows have a URL, old (386993, 2010) and recent (2239692). Rows also exist for future sessions, so a row is not proof of a recording. `KNS_CommitteeSession.BroadcastUrl` is always null. |
+| Knesset Channel, knesset.tv | Listing `https://www.knesset.tv/parliament/` (`?page=N`, 12 programs per page, newest first). Card title "דיון במליאת הכנסת - 18.11.26 - חלק א"; the date in the title is the sitting day (the time under it is the air time, which can be after midnight). Program page `/parliament/programs/{id}/` contains `https://api.bynetcdn.com/Redirector/knesset/manifest/{KNS…}/HLS/playlist.m3u8`, which plays. | robots.txt allows `/`, disallows only `*videoUrl=*`, `*/KnessetPlayer/*`, `/committees?hdyQ`. The listing has gaps (nothing between 13.07.26 and 11.11.26). |
+
+There is no shared id between plenum sittings and knesset.tv programs, and no public per-speaker timestamp index.
+
+### 8.2 Design
+
+- `VideoLinkSource` (common code) with `forCommitteeSession(sessionId, title, at)` and `forPlenumDay(date)`. Screens see only this interface; `CompositeVideoLinkSource` combines `KnessetVodSource` and `KnessetTvSource`, and a failing source contributes nothing. A later source (for example a per-speaker index) plugs in here.
+- `KnessetVodSource`: builds the stream URL from the session id, checks the manifest only when the user taps a session, and caches the answer for 30 days (a 404 is cached as "no video"). Without a stream it offers the broadcast page. Broadcast rows are looked up 20 ids per request and cached for 30 days.
+- `KnessetTvSource`: fetches only the listing and program pages, one request at a time at least 1 s apart, through the shared cache (listing page 1 for 1 hour, later pages 12 hours, program pages 30 days), and only when the user opens a sitting. It stops paging once the listing is past the wanted day (at most 8 pages) and gives up after 12 s. Any markup change or error means "no video found".
+- Playback: Media3 ExoPlayer (HLS) in an `androidMain` actual; a failed stream shows a message and an "open in browser" button that opens the broadcast page when known.
+
+### 8.3 Screens
+
+- Member detail has a Videos tab that states the limits and opens the member's videos. The People tab has a Videos section that asks for a member first.
+- Member videos, Committees tab: the member's committee memberships in the selected Knesset (`KNS_PersonToPosition` with `CommitteeID ne null`), their sessions newest first, paged, kept when the session has a broadcast row and falls inside that membership's dates. Row: committee, date, first agenda item; tap plays in the app, else opens the broadcast page, else says there is no video. Filters: committee chips and text search on agenda item names (on loaded rows).
+- The server refuses (HTTP 473) a `$filter` with a date range per committee once there are three or more, and refuses (HTTP 400) an `or` chain of 25 ids. The query is therefore `(CommitteeID eq a or …, at most 20) and StartDate ge <earliest membership start> and StartDate lt now`, and each membership's dates are checked on the device.
+- Member videos, Plenum tab: sittings in which the member voted (distinct `SessionID` of their `KNS_PlenumVoteResult` rows); each opens the sitting, whose screen shows the Knesset Channel videos of that day when found.
+- The UI says plainly: these are sessions of committees the member sat on, not proof that the member spoke or attended, and there is no jumping to their part.

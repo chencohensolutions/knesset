@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">הכנסת</string>
+    <string name="downloads_channel">הורדות סרטונים</string>
+    <string name="downloading_video">מוריד סרטון</string>
+    <string name="cancel_download">ביטול</string>
+</resources>
