@@ -13,6 +13,7 @@ Contents
 5. Milestones with acceptance criteria
 6. Build, CI and getting the APK onto a phone
 7. Risks and open questions
+8. Videos by member (M9)
 
 Legend used throughout: **[verified]** means observed in a live response on 2026-11-19. **[unverified]** means inferred from metadata or prior knowledge and must be checked by the implementer against the live API before relying on it.
 
@@ -487,6 +488,9 @@ Accept: every entity set in the service document opens in the explorer. With the
 
 **M8. Release.** Signed APK from CI attached to a GitHub Release, short README with install steps and screenshots.
 
+**M9. Videos by member.** See section 8.
+Accept: a member's committee sessions with a broadcast are listed newest first and play in the app; a plenum sitting shows the Knesset Channel videos of its day when they exist; the UI says plainly that membership is not attendance.
+
 Testing approach: all network tests use `MockEngine` with JSON fixtures stored in `commonTest/resources`. No test calls the live API. Fixtures were captured from the live service on 2026-11-19 and live in `composeApp/src/commonTest/resources/fixtures/`.
 
 ---
@@ -510,3 +514,34 @@ Testing approach: all network tests use `MockEngine` with JSON fixtures stored i
 6. **Large tables.** Vote results have about 2 million rows. Always filter by `VoteID` or `MkId`, never list unfiltered outside the Data Explorer, and there only page by page.
 7. **Schema drift.** The service changes without notice (v4 already differs from v3). Unknown JSON keys are ignored and the Data Explorer reads names from the live service document, so new entity sets appear without an app update.
 8. **Privacy.** The API exposes emails of people and an identity number for lobbyists. Show official emails only on a person's own detail screen, and never fetch or show identity numbers.
+
+---
+
+## 8. Videos by member (M9)
+
+Added at hen's request on 2026-11-19. Research spec: `docs/VIDEOS-BY-MEMBER-SPEC.md` on branch `claude/project-thread-8972i9`. Everything below was checked from a Mac in Israel on 2026-11-19.
+
+### 8.1 Sources
+
+| Source | What | Verified |
+|---|---|---|
+| Knesset video server | `https://video.knesset.gov.il/KnsVod/_definst_/mp4:archive/CMT/CmtSession_{KNS_CommitteeSession.Id}.mp4/playlist.m3u8` (HLS, 640x360; `manifest.mpd` for DASH) | 200 for sessions 2220560, 2200051 (Jan 2023), 2160889 (Aug 2021), 2140056 (Jun 2020). 404 for Mar 2019 and older, for future sessions, and for some recent ones (for example 2235063, Foreign Affairs and Defense, Oct 2025). The archive starts between March 2019 and June 2020. |
+| `KNS_BroadcastCommitteSession` | `Id` = committee session id; `BroadcastUrl` = the session's page on main.knesset.gov.il (`CommitteeTVarchive.aspx?TopicID=…`) | 20,576 rows have a URL, old (386993, 2010) and recent (2239692). Rows also exist for future sessions, so a row is not proof of a recording. `KNS_CommitteeSession.BroadcastUrl` is always null. |
+| Knesset Channel, knesset.tv | Listing `https://www.knesset.tv/parliament/` (`?page=N`, 12 programs per page, newest first). Card title "דיון במליאת הכנסת - 18.11.26 - חלק א"; the date in the title is the sitting day (the time under it is the air time, which can be after midnight). Program page `/parliament/programs/{id}/` contains `https://api.bynetcdn.com/Redirector/knesset/manifest/{KNS…}/HLS/playlist.m3u8`, which plays. | robots.txt allows `/`, disallows only `*videoUrl=*`, `*/KnessetPlayer/*`, `/committees?hdyQ`. The listing has gaps (nothing between 13.07.26 and 11.11.26). |
+
+There is no shared id between plenum sittings and knesset.tv programs, and no public per-speaker timestamp index.
+
+### 8.2 Design
+
+- `VideoLinkSource` (common code) with `forCommitteeSession(sessionId, title, at)` and `forPlenumDay(date)`. Screens see only this interface; `CompositeVideoLinkSource` combines `KnessetVodSource` and `KnessetTvSource`, and a failing source contributes nothing. A later source (for example a per-speaker index) plugs in here.
+- `KnessetVodSource`: builds the stream URL from the session id, checks the manifest only when the user taps a session, and caches the answer for 30 days (a 404 is cached as "no video"). Without a stream it offers the broadcast page. Broadcast rows are looked up 20 ids per request and cached for 30 days.
+- `KnessetTvSource`: fetches only the listing and program pages, one request at a time at least 1 s apart, through the shared cache (listing page 1 for 1 hour, later pages 12 hours, program pages 30 days), and only when the user opens a sitting. It stops paging once the listing is past the wanted day (at most 8 pages) and gives up after 12 s. Any markup change or error means "no video found".
+- Playback: Media3 ExoPlayer (HLS) in an `androidMain` actual; a failed stream shows a message and an "open in browser" button that opens the broadcast page when known.
+
+### 8.3 Screens
+
+- Member detail has a Videos tab that states the limits and opens the member's videos. The People tab has a Videos section that asks for a member first.
+- Member videos, Committees tab: the member's committee memberships in the selected Knesset (`KNS_PersonToPosition` with `CommitteeID ne null`), their sessions newest first, paged, kept when the session has a broadcast row and falls inside that membership's dates. Row: committee, date, first agenda item; tap plays in the app, else opens the broadcast page, else says there is no video. Filters: committee chips and text search on agenda item names (on loaded rows).
+- The server refuses (HTTP 473) a `$filter` with a date range per committee once there are three or more, and refuses (HTTP 400) an `or` chain of 25 ids. The query is therefore `(CommitteeID eq a or …, at most 20) and StartDate ge <earliest membership start> and StartDate lt now`, and each membership's dates are checked on the device.
+- Member videos, Plenum tab: sittings in which the member voted (distinct `SessionID` of their `KNS_PlenumVoteResult` rows); each opens the sitting, whose screen shows the Knesset Channel videos of that day when found.
+- The UI says plainly: these are sessions of committees the member sat on, not proof that the member spoke or attended, and there is no jumping to their part.

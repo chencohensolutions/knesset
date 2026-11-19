@@ -28,6 +28,9 @@ val LocalNav = staticCompositionLocalOf<NavHostController> { error("No NavContro
 @Serializable data class MinistryRoute(val id: Int)
 @Serializable data class LobbyistRoute(val id: Int)
 
+@Serializable data class MemberVideosRoute(val id: Int)
+@Serializable data class VideoPlayerRoute(val url: String, val title: String, val fallbackUrl: String? = null)
+
 /** A standalone list of one kind, opened from search "show all" with the query applied. */
 @Serializable data class KindListRoute(val kind: String, val query: String = "")
 

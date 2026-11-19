@@ -37,6 +37,7 @@ import com.chencohensolutions.knesset.ui.FactionRoute
 import com.chencohensolutions.knesset.ui.Kind
 import com.chencohensolutions.knesset.ui.LawRoute
 import com.chencohensolutions.knesset.ui.MemberRoute
+import com.chencohensolutions.knesset.ui.MemberVideosRoute
 import com.chencohensolutions.knesset.ui.MinistryRoute
 import com.chencohensolutions.knesset.ui.MotionRoute
 import com.chencohensolutions.knesset.ui.QuestionRoute
@@ -66,6 +67,10 @@ import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.koinInject
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+
+/** Replaced by localized text when rendered (the data layer has no access to string resources). */
+const val VIDEOS_DISCLAIMER_MARKER = "\u0001videos_disclaimer"
+const val VIDEOS_COMMITTEES_MARKER = "\u0001videos_open"
 
 /** "Chair, Finance Committee" style label for one role row. */
 fun roleLabel(p: PersonToPositionDto): String {
@@ -153,6 +158,12 @@ suspend fun loadMember(l: Loader, id: Int, lookups: LookupRepo): DetailContent =
                 Section.Links(Res.string.voting_record, votes.map { r ->
                     LinkItem(r.vote?.voteTitle ?: "#${r.voteID}", r.vote?.voteDateTime?.let(IsraelTime::dateTime), r.voteID?.let { VoteRoute(it) }, status = r.resultDesc)
                 }),
+            )),
+            DetailTab(Res.string.videos, listOf(
+                Section.Text(null, VIDEOS_DISCLAIMER_MARKER),
+                Section.Links(null, listOf(
+                    LinkItem(VIDEOS_COMMITTEES_MARKER, null, MemberVideosRoute(id)),
+                ), countInTitle = false),
             )),
             DetailTab(Res.string.section_questions, listOf(
                 Section.Links(null, queries.map { q -> LinkItem(q.name ?: "#${q.id}", listOfNotNull(q.typeDesc, q.submitDate?.let(IsraelTime::date)).joinToString(" · "), QuestionRoute(q.id), status = statuses[q.statusID]?.desc) }),
@@ -274,6 +285,7 @@ fun PeopleScreen() {
         Res.string.section_factions to { FactionsContent() },
         Res.string.section_ministries to { ListContent(rememberListVm(ministriesSpec, "ministries")) },
     )
+    sections += Res.string.videos to { com.chencohensolutions.knesset.ui.video.VideosEntryContent() }
     if (lobbyists) sections += Res.string.section_lobbyists to { LobbyistsContent() }
     SectionTabsScreen(Res.string.tab_people, sections)
 }

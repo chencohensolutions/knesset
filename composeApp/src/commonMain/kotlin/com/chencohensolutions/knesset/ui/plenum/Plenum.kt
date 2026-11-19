@@ -28,6 +28,8 @@ import com.chencohensolutions.knesset.ui.MotionRoute
 import com.chencohensolutions.knesset.ui.QuestionRoute
 import com.chencohensolutions.knesset.ui.SittingRoute
 import com.chencohensolutions.knesset.ui.VoteRoute
+import com.chencohensolutions.knesset.ui.VideoPlayerRoute
+import com.chencohensolutions.knesset.data.video.VideoLinkSource
 import com.chencohensolutions.knesset.ui.components.SectionTabsScreen
 import com.chencohensolutions.knesset.ui.components.rememberDetailVm
 import com.chencohensolutions.knesset.ui.components.rememberListVm
@@ -46,6 +48,7 @@ import com.chencohensolutions.knesset.ui.list.Option
 import com.chencohensolutions.knesset.ui.list.SortOption
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
@@ -220,11 +223,15 @@ suspend fun loadVote(l: Loader, id: Int, people: PeopleRepo): DetailContent = co
     )
 }
 
-suspend fun loadSitting(l: Loader, id: Int): DetailContent = coroutineScope {
+suspend fun loadSitting(l: Loader, id: Int, videos: VideoLinkSource): DetailContent = coroutineScope {
     val votesAsync = async {
         l.optional { all(ODataQuery("KNS_PlenumVote").apply { filter(F.eq("SessionID", id)); orderBy = "Ordinal,Id" }, PlenumVoteDto.serializer(), Ttl.DETAIL, max = 300) }.orEmpty()
     }
     val s = l.one("KNS_PlenumSession", id, PlenumSessionDto.serializer(), listOf("KNS_PlmSessionItem", "KNS_DocumentPlenumSession"))
+    // Knesset Channel videos of the sitting day, matched by date. Any failure, or a slow site, just shows nothing.
+    val videoRefs = s.startDate?.let { start ->
+        withTimeoutOrNull(12_000) { runCatching { videos.forPlenumDay(IsraelTime.local(start).date) }.getOrDefault(emptyList()) }
+    }.orEmpty()
     DetailContent(
         kind = Kind.SITTING, id = id,
         title = s.name ?: "#$id",
@@ -241,6 +248,7 @@ suspend fun loadSitting(l: Loader, id: Int): DetailContent = coroutineScope {
                 LinkItem(i.name ?: "#${i.itemID}", i.itemTypeDesc, i.itemID?.let { ItemRefs.kindOf(i.itemTypeID)?.route(it) })
             }),
             Section.Links(Res.string.votes, votesAsync.await().map { v -> LinkItem(v.voteTitle ?: "#${v.id}", listOfNotNull(v.voteDateTime?.let(IsraelTime::time), v.voteSubject).joinToString(" · "), VoteRoute(v.id)) }),
+            Section.Links(Res.string.plenum_videos, videoRefs.map { v -> LinkItem(v.title, v.source, VideoPlayerRoute(v.url, v.title)) }),
             Section.Documents(Res.string.protocols, Documents.prepare(s.documentPlenumSession)),
         ),
     )
@@ -312,7 +320,10 @@ fun VoteScreen(id: Int) {
 }
 
 @Composable
-fun SittingScreen(id: Int) = DetailScreen(rememberDetailVm("sitting$id") { loadSitting(this, id) }, stringResource(Res.string.section_sittings), { FavoriteAction(it) })
+fun SittingScreen(id: Int) {
+    val videos = koinInject<VideoLinkSource>()
+    DetailScreen(rememberDetailVm("sitting$id") { loadSitting(this, id, videos) }, stringResource(Res.string.section_sittings), { FavoriteAction(it) })
+}
 
 @Composable
 fun MotionScreen(id: Int) = DetailScreen(rememberDetailVm("motion$id") { loadMotion(this, id, it) }, stringResource(Res.string.section_motions), { FavoriteAction(it) })

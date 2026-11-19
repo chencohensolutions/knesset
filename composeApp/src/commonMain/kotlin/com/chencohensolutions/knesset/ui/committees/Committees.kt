@@ -25,6 +25,8 @@ import com.chencohensolutions.knesset.ui.Kind
 import com.chencohensolutions.knesset.ui.MemberRoute
 import com.chencohensolutions.knesset.ui.MotionRoute
 import com.chencohensolutions.knesset.ui.SecondaryLawRoute
+import com.chencohensolutions.knesset.ui.VideoPlayerRoute
+import com.chencohensolutions.knesset.data.video.KnessetVodSource
 import com.chencohensolutions.knesset.ui.components.SectionTabsScreen
 import com.chencohensolutions.knesset.ui.components.rememberDetailVm
 import com.chencohensolutions.knesset.ui.components.rememberListVm
@@ -202,8 +204,12 @@ suspend fun loadCommittee(l: Loader, id: Int, today: LocalDate): DetailContent =
 /** Session pages are on http://main.knesset.gov.il; upgrade to https. */
 fun httpsUrl(raw: String?): String? = Documents.normalizeUrl(raw)
 
-suspend fun loadCommitteeSession(l: Loader, id: Int): DetailContent {
+suspend fun loadCommitteeSession(l: Loader, id: Int, vod: KnessetVodSource): DetailContent {
     val s = l.one("KNS_CommitteeSession", id, CommitteeSessionDto.serializer(), listOf("KNS_Committee", "KNS_CmtSessionItem", "KNS_DocumentCommitteeSession"))
+    val past = s.startDate?.let { it < kotlin.time.Clock.System.now() } == true
+    // The stream is named by the session id; the player falls back to the broadcast page when it cannot play.
+    val broadcastPage = if (past) runCatching { vod.broadcastPages(listOf(id))[id] }.getOrNull() else null
+    val title = listOfNotNull(s.committee?.name?.trim(), s.startDate?.let(IsraelTime::dateTime)).joinToString(" · ")
     return DetailContent(
         kind = Kind.COMMITTEE_SESSION, id = id,
         title = s.committee?.name?.trim() ?: "#$id",
@@ -223,6 +229,7 @@ suspend fun loadCommitteeSession(l: Loader, id: Int): DetailContent {
                 fact(Res.string.f_number, s.number),
                 fact(Res.string.f_note, s.note),
             )),
+            Section.Links(null, if (past) listOf(LinkItem(WATCH_MARKER, broadcastPage, VideoPlayerRoute(KnessetVodSource.streamUrl(id), title, broadcastPage ?: httpsUrl(s.sessionUrl)))) else emptyList(), countInTitle = false),
             Section.Actions(null, listOfNotNull(
                 httpsUrl(s.sessionUrl)?.let { ActionLink(Res.string.session_page, it) },
                 httpsUrl(s.broadcastUrl)?.let { ActionLink(Res.string.broadcast, it) },
@@ -242,6 +249,10 @@ fun CommitteeScreen(id: Int) {
 }
 
 @Composable
-fun CommitteeSessionScreen(id: Int) =
-    DetailScreen(rememberDetailVm("csession$id") { loadCommitteeSession(this, id) }, stringResource(Res.string.section_calendar), { FavoriteAction(it) })
+fun CommitteeSessionScreen(id: Int) {
+    val vod = org.koin.compose.koinInject<KnessetVodSource>()
+    DetailScreen(rememberDetailVm("csession$id") { loadCommitteeSession(this, id, vod) }, stringResource(Res.string.section_calendar), { FavoriteAction(it) })
+}
+
+const val WATCH_MARKER = "\u0001watch"
 

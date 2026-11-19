@@ -49,6 +49,9 @@ import com.chencohensolutions.knesset.resources.share
 import com.chencohensolutions.knesset.resources.show_all_n
 import com.chencohensolutions.knesset.resources.show_all
 import com.chencohensolutions.knesset.resources.empty
+import com.chencohensolutions.knesset.resources.videos_disclaimer
+import com.chencohensolutions.knesset.resources.videos_open
+import com.chencohensolutions.knesset.resources.watch
 import androidx.compose.foundation.layout.Box
 import com.chencohensolutions.knesset.ui.LocalNav
 import com.chencohensolutions.knesset.ui.components.DataText
@@ -183,7 +186,7 @@ private fun SectionCard(section: Section) {
                 }
                 is Section.Text -> {
                     title?.let { SectionTitle(it) }
-                    DataText(section.text.orEmpty(), Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium)
+                    DataText(localized(section.text.orEmpty()), Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium)
                 }
                 is Section.Links -> {
                     val nav = LocalNav.current
@@ -198,7 +201,7 @@ private fun SectionCard(section: Section) {
                         section.items.take(limit).forEachIndexed { i, item ->
                             if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp))
                             ItemRow(
-                                item.title, item.subtitle, item.status, initials = item.initials, route = item.route, url = item.url,
+                                localized(item.title), item.subtitle, item.status, initials = item.initials, route = item.route, url = item.url,
                                 below = item.bar?.let { b -> { VoteBar(b.first, b.second, b.third) } },
                             )
                         }
@@ -250,6 +253,15 @@ private fun SectionCard(section: Section) {
             }
         }
     }
+}
+
+/** Text placeholders the data layer uses for UI strings it cannot resolve itself. */
+@Composable
+private fun localized(text: String): String = when (text) {
+    com.chencohensolutions.knesset.ui.people.VIDEOS_DISCLAIMER_MARKER -> stringResource(Res.string.videos_disclaimer)
+    com.chencohensolutions.knesset.ui.people.VIDEOS_COMMITTEES_MARKER -> stringResource(Res.string.videos_open)
+    com.chencohensolutions.knesset.ui.committees.WATCH_MARKER -> stringResource(Res.string.watch)
+    else -> text
 }
 
 /** Shows the first rows and a "show all" button for long sections. */

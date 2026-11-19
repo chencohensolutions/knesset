@@ -619,3 +619,11 @@ data class DocumentDto(
     @SerialName("FilePath") val filePath: String? = null,
     @SerialName("LastUpdatedDate") val lastUpdatedDate: ODataInstant? = null,
 )
+
+/** `Id` is the committee session id; `BroadcastUrl` is the session's page on the main site. */
+@Serializable
+data class BroadcastCommitteSessionDto(
+    @SerialName("Id") val id: Int,
+    @SerialName("BroadcastId") val broadcastId: Int? = null,
+    @SerialName("BroadcastUrl") val broadcastUrl: String? = null,
+)

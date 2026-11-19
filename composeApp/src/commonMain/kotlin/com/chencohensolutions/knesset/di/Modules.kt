@@ -14,6 +14,11 @@ import com.chencohensolutions.knesset.data.repo.FavoritesRepo
 import com.chencohensolutions.knesset.data.repo.RecentSearchRepo
 import com.chencohensolutions.knesset.db.KnessetDatabase
 import io.ktor.client.HttpClient
+import com.chencohensolutions.knesset.data.video.CompositeVideoLinkSource
+import com.chencohensolutions.knesset.data.video.KnessetTvSource
+import com.chencohensolutions.knesset.data.video.KnessetVodSource
+import com.chencohensolutions.knesset.data.video.PoliteFetcher
+import com.chencohensolutions.knesset.data.video.VideoLinkSource
 import com.chencohensolutions.knesset.ui.lobbyists.LobbyistsAvailability
 import org.koin.dsl.module
 
@@ -34,4 +39,8 @@ val commonModule = module {
     single { FavoritesRepo(get(), get()) }
     single { RecentSearchRepo(get()) }
     single { LobbyistsAvailability(get()) }
+    single { PoliteFetcher(ODataClient.configure(get<HttpClient>(), get<AppInfo>().versionName), get()) }
+    single { KnessetVodSource(get(), get()) }
+    single { KnessetTvSource(get()) }
+    single<VideoLinkSource> { CompositeVideoLinkSource(listOf(get<KnessetVodSource>(), get<KnessetTvSource>())) }
 }

@@ -108,10 +108,12 @@ fun ItemRow(
     url: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     below: (@Composable () -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     val nav = LocalNav.current
     val opener = koinInject<UrlOpener>()
     val click: (() -> Unit)? = when {
+        onClick != null -> onClick
         route != null -> { { nav.navigate(route) } }
         url != null -> { { opener.open(url) } }
         else -> null

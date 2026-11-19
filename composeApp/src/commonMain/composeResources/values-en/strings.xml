@@ -224,4 +224,18 @@
     <string name="about_privacy">Settings, favorites and the cache stay on this device.</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_last_sync">Last fetched from the server: %1$s</string>
+    <string name="videos">Videos</string>
+    <string name="videos_disclaimer">These are sessions of committees the member sat on, during the membership. That is not proof the member spoke or attended, and there is no way to jump to their part.</string>
+    <string name="videos_open">Committee session videos</string>
+    <string name="videos_committees">Committees</string>
+    <string name="videos_plenum">Plenum</string>
+    <string name="videos_search_items">Search agenda items</string>
+    <string name="play">Play</string>
+    <string name="no_video">No video found for this session</string>
+    <string name="videos_pick_member">Pick a member to see videos of their committee sessions.</string>
+    <string name="videos_plenum_hint">Plenum sittings in which the member voted. A sitting page shows the Knesset Channel videos of that day when found.</string>
+    <string name="open_in_browser">Open in browser</string>
+    <string name="video_failed">The video cannot play in the app.</string>
+    <string name="watch">Watch the session</string>
+    <string name="plenum_videos">Knesset Channel videos</string>
 </resources>

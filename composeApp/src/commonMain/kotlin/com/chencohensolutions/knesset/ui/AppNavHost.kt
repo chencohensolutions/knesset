@@ -56,6 +56,8 @@ import com.chencohensolutions.knesset.ui.legislation.LawScreen
 import com.chencohensolutions.knesset.ui.legislation.LegislationScreen
 import com.chencohensolutions.knesset.ui.legislation.SecondaryLawScreen
 import androidx.navigation.toRoute
+import com.chencohensolutions.knesset.ui.video.MemberVideosScreen
+import com.chencohensolutions.knesset.ui.video.VideoPlayerScreen
 import com.chencohensolutions.knesset.ui.settings.AboutScreen
 import com.chencohensolutions.knesset.ui.lobbyists.LobbyistScreen
 import com.chencohensolutions.knesset.ui.explorer.ExplorerItemScreen
@@ -155,6 +157,8 @@ private fun MainScaffold() {
             composable<CommitteeSessionRoute> { CommitteeSessionScreen(it.toRoute<CommitteeSessionRoute>().id) }
             composable<PeopleRoute> { PeopleScreen() }
             composable<MemberRoute> { MemberScreen(it.toRoute<MemberRoute>().id) }
+            composable<MemberVideosRoute> { MemberVideosScreen(it.toRoute<MemberVideosRoute>().id) }
+            composable<VideoPlayerRoute> { val r = it.toRoute<VideoPlayerRoute>(); VideoPlayerScreen(r.url, r.title, r.fallbackUrl) }
             composable<FactionRoute> { FactionScreen(it.toRoute<FactionRoute>().id) }
             composable<MinistryRoute> { MinistryScreen(it.toRoute<MinistryRoute>().id) }
             composable<SearchRoute> { SearchScreen(it.toRoute<SearchRoute>().query) }

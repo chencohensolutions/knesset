@@ -224,4 +224,18 @@
     <string name="about_privacy">ההגדרות, המועדפים והמטמון נשמרים במכשיר בלבד.</string>
     <string name="about_version">גרסה %1$s</string>
     <string name="about_last_sync">עדכון אחרון מהשרת: %1$s</string>
+    <string name="videos">סרטונים</string>
+    <string name="videos_disclaimer">אלה ישיבות של ועדות שחבר הכנסת חבר בהן, בתקופת חברותו. אין בכך הוכחה שדיבר או נכח בישיבה, ואי אפשר לקפוץ לקטע שלו.</string>
+    <string name="videos_open">ישיבות ועדה מצולמות</string>
+    <string name="videos_committees">ועדות</string>
+    <string name="videos_plenum">מליאה</string>
+    <string name="videos_search_items">חיפוש בנושאי הישיבה</string>
+    <string name="play">צפייה</string>
+    <string name="no_video">לא נמצא סרטון לישיבה הזו</string>
+    <string name="videos_pick_member">בחרו חבר כנסת כדי לראות סרטוני ישיבות של הוועדות שלו.</string>
+    <string name="videos_plenum_hint">ישיבות מליאה שבהן חבר הכנסת הצביע. בדף הישיבה מופיעים סרטוני ערוץ הכנסת של אותו יום, אם נמצאו.</string>
+    <string name="open_in_browser">פתיחה בדפדפן</string>
+    <string name="video_failed">לא ניתן לנגן את הסרטון באפליקציה.</string>
+    <string name="watch">צפייה בישיבה</string>
+    <string name="plenum_videos">סרטוני ערוץ הכנסת</string>
 </resources>
