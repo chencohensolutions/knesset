@@ -136,7 +136,7 @@ class MemberVideosViewModel(
     val state: StateFlow<MemberVideosState> = _state.asStateFlow()
 
     /** Sessions of the member's committees, newest first, keeping only those with a broadcast row. */
-    val pager = Pager<VideoRow>(viewModelScope, pageSize = 50) { skip, top, _, force ->
+    val pager = Pager<VideoRow>(viewModelScope, pageSize = 100) { skip, top, _, force ->
         val s = _state.value
         val filter = MemberVideoLogic.sessionFilter(s.memberships.orEmpty(), Clock.System.now(), s.committee) ?: return@Pager PageResult(emptyList())
         val q = ODataQuery("KNS_CommitteeSession").apply {

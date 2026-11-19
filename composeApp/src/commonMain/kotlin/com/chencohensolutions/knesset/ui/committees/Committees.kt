@@ -205,7 +205,9 @@ suspend fun loadCommittee(l: Loader, id: Int, today: LocalDate): DetailContent =
 fun httpsUrl(raw: String?): String? = Documents.normalizeUrl(raw)
 
 suspend fun loadCommitteeSession(l: Loader, id: Int, vod: KnessetVodSource): DetailContent {
-    val s = l.one("KNS_CommitteeSession", id, CommitteeSessionDto.serializer(), listOf("KNS_Committee", "KNS_CmtSessionItem", "KNS_DocumentCommitteeSession"))
+    val s = l.one("KNS_CommitteeSession", id, CommitteeSessionDto.serializer(), listOf("KNS_Committee", "KNS_DocumentCommitteeSession"))
+    // Paged on its own: an expanded collection stops at 100 rows.
+    val items = l.all(ODataQuery("KNS_CmtSessionItem").apply { filter(F.eq("CommitteeSessionID", id)); orderBy = "Ordinal,Id" }, com.chencohensolutions.knesset.data.dto.CmtSessionItemDto.serializer(), Ttl.DETAIL, max = 1_000)
     val past = s.startDate?.let { it < kotlin.time.Clock.System.now() } == true
     // The stream is named by the session id; the player falls back to the broadcast page when it cannot play.
     val broadcastPage = if (past) runCatching { vod.broadcastPages(listOf(id))[id] }.getOrNull() else null
@@ -234,7 +236,7 @@ suspend fun loadCommitteeSession(l: Loader, id: Int, vod: KnessetVodSource): Det
                 httpsUrl(s.sessionUrl)?.let { ActionLink(Res.string.session_page, it) },
                 httpsUrl(s.broadcastUrl)?.let { ActionLink(Res.string.broadcast, it) },
             )),
-            Section.Links(Res.string.agenda, s.cmtSessionItem.sortedBy { it.ordinal ?: Int.MAX_VALUE }.map { i ->
+            Section.Links(Res.string.agenda, items.sortedBy { it.ordinal ?: Int.MAX_VALUE }.map { i ->
                 LinkItem(i.name ?: "#${i.itemID}", null, i.itemID?.let { ItemRefs.kindOf(i.itemTypeID)?.route(it) })
             }),
             Section.Documents(Res.string.documents, Documents.prepare(s.documentCommitteeSession)),

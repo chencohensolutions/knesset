@@ -7,6 +7,7 @@ import com.chencohensolutions.knesset.decodedUrl
 import com.chencohensolutions.knesset.json
 import com.chencohensolutions.knesset.resources.Res
 import com.chencohensolutions.knesset.resources.members_by_result
+import com.chencohensolutions.knesset.resources.agenda
 import com.chencohensolutions.knesset.resources.results
 import com.chencohensolutions.knesset.route
 import com.chencohensolutions.knesset.testApi
@@ -18,6 +19,34 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PlenumTest {
+    @Test
+    fun sittingAgendaIsPagedPastTheExpandCap() = runTest {
+        // 130 agenda items: an expand would stop at 100.
+        fun items(skip: Int) = (skip until minOf(skip + 100, 130)).joinToString(",", "{\"value\":[", "]}") {
+            """{"Id":${it + 1},"ItemID":${5000 + it},"PlenumSessionID":2246405,"ItemTypeID":2,"Ordinal":$it,"Name":"פריט $it"}"""
+        }
+        val api = testApi { req ->
+            val url = req.decodedUrl()
+            when {
+                url.contains("KNS_PlmSessionItem") -> json(items(Regex("skip=(\\d+)").find(url)!!.groupValues[1].toInt()))
+                url.contains("KNS_PlenumSession?") -> {
+                    assertTrue(!url.contains("KNS_PlmSessionItem"), "agenda is not expanded")
+                    json("""{"value":[{"Id":2246405,"Name":"ישיבה","KnessetNum":26,"StartDate":"2026-11-17T16:00:00+02:00","KNS_DocumentPlenumSession":[]}]}""")
+                }
+                else -> json("""{"value":[]}""")
+            }
+        }
+        val none = object : com.chencohensolutions.knesset.data.video.VideoLinkSource {
+            override suspend fun forCommitteeSession(sessionId: Int, title: String, at: kotlin.time.Instant?) = emptyList<com.chencohensolutions.knesset.data.video.VideoRef>()
+            override suspend fun forPlenumDay(date: kotlinx.datetime.LocalDate) = emptyList<com.chencohensolutions.knesset.data.video.VideoRef>()
+        }
+        val content = com.chencohensolutions.knesset.ui.plenum.loadSitting(Loader(api, FetchMode.NORMAL), 2246405, none)
+        val agenda = content.sections.first { it.title == Res.string.agenda } as Section.Links
+        assertEquals(130, agenda.items.size)
+        assertEquals("פריט 0", agenda.items.first().title)
+        assertTrue(agenda.items.all { it.route is BillRoute })
+    }
+
     @Test
     fun voteTotalsEqualResultRowsByResultAndByFaction() = runTest {
         val api = testApi { req ->

@@ -227,7 +227,11 @@ suspend fun loadSitting(l: Loader, id: Int, videos: VideoLinkSource): DetailCont
     val votesAsync = async {
         l.optional { all(ODataQuery("KNS_PlenumVote").apply { filter(F.eq("SessionID", id)); orderBy = "Ordinal,Id" }, PlenumVoteDto.serializer(), Ttl.DETAIL, max = 300) }.orEmpty()
     }
-    val s = l.one("KNS_PlenumSession", id, PlenumSessionDto.serializer(), listOf("KNS_PlmSessionItem", "KNS_DocumentPlenumSession"))
+    // Expanded collections stop at 100 rows and long sittings have more items, so the agenda is paged on its own.
+    val itemsAsync = async {
+        l.all(ODataQuery("KNS_PlmSessionItem").apply { filter(F.eq("PlenumSessionID", id)); orderBy = "Ordinal,Id" }, PlmSessionItemDto.serializer(), Ttl.DETAIL, max = 1_000)
+    }
+    val s = l.one("KNS_PlenumSession", id, PlenumSessionDto.serializer(), listOf("KNS_DocumentPlenumSession"))
     // Knesset Channel videos of the sitting day, matched by date. Any failure, or a slow site, just shows nothing.
     val videoRefs = s.startDate?.let { start ->
         withTimeoutOrNull(12_000) { runCatching { videos.forPlenumDay(IsraelTime.local(start).date) }.getOrDefault(emptyList()) }
@@ -244,7 +248,7 @@ suspend fun loadSitting(l: Loader, id: Int, videos: VideoLinkSource): DetailCont
                 fact(Res.string.f_end, s.finishDate),
                 if (s.isSpecialMeeting == true) fact(Res.string.filter_special, "✓") else null,
             )),
-            Section.Links(Res.string.agenda, s.plmSessionItem.sortedBy { it.ordinal ?: Long.MAX_VALUE }.map { i ->
+            Section.Links(Res.string.agenda, itemsAsync.await().sortedBy { it.ordinal ?: Long.MAX_VALUE }.map { i ->
                 LinkItem(i.name ?: "#${i.itemID}", i.itemTypeDesc, i.itemID?.let { ItemRefs.kindOf(i.itemTypeID)?.route(it) })
             }),
             Section.Links(Res.string.votes, votesAsync.await().map { v -> LinkItem(v.voteTitle ?: "#${v.id}", listOfNotNull(v.voteDateTime?.let(IsraelTime::time), v.voteSubject).joinToString(" · "), VoteRoute(v.id)) }),

@@ -17,6 +17,9 @@ import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -124,11 +127,14 @@ class KnessetVodSource(private val web: PoliteFetcher, private val api: Api) : V
     }
 
     /** Which of these sessions have a row in the broadcast table (a broadcast was scheduled). */
-    suspend fun withBroadcastRow(sessionIds: List<Int>): Set<Int> {
+    suspend fun withBroadcastRow(sessionIds: List<Int>): Set<Int> = coroutineScope {
         val loader = Loader(api, FetchMode.NORMAL)
-        return sessionIds.distinct().chunked(20).flatMap { chunk ->
-            loader.list(ODataQuery("KNS_BroadcastCommitteSession").apply { filter(F.anyOf("Id", chunk)); top = chunk.size; select = listOf("Id") }, BroadcastCommitteSessionDto.serializer(), Ttl.PAST_KNESSET)
-        }.map { it.id }.toSet()
+        // Chunks run concurrently; the client still keeps at most two requests in flight.
+        sessionIds.distinct().chunked(20).map { chunk ->
+            async {
+                loader.list(ODataQuery("KNS_BroadcastCommitteSession").apply { filter(F.anyOf("Id", chunk)); top = chunk.size; select = listOf("Id") }, BroadcastCommitteSessionDto.serializer(), Ttl.PAST_KNESSET)
+            }
+        }.awaitAll().flatten().map { it.id }.toSet()
     }
 
     companion object {
