@@ -52,6 +52,11 @@ import com.chencohensolutions.knesset.resources.tab_legislation
 import com.chencohensolutions.knesset.resources.tab_people
 import com.chencohensolutions.knesset.resources.tab_plenum
 import com.chencohensolutions.knesset.ui.settings.SettingsScreen
+import com.chencohensolutions.knesset.ui.legislation.BillScreen
+import com.chencohensolutions.knesset.ui.legislation.LawScreen
+import com.chencohensolutions.knesset.ui.legislation.LegislationScreen
+import com.chencohensolutions.knesset.ui.legislation.SecondaryLawScreen
+import androidx.navigation.toRoute
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.reflect.KClass
@@ -116,7 +121,10 @@ private fun MainScaffold() {
       CompositionLocalProvider(LocalNav provides nav) {
         NavHost(nav, startDestination = HomeRoute, modifier = Modifier.padding(bottom = padding.calculateBottomPadding())) {
             composable<HomeRoute> { Placeholder(Res.string.tab_home) }
-            composable<LegislationRoute> { Placeholder(Res.string.tab_legislation) }
+            composable<LegislationRoute> { LegislationScreen() }
+            composable<BillRoute> { BillScreen(it.toRoute<BillRoute>().id) }
+            composable<LawRoute> { LawScreen(it.toRoute<LawRoute>().id) }
+            composable<SecondaryLawRoute> { SecondaryLawScreen(it.toRoute<SecondaryLawRoute>().id) }
             composable<PlenumRoute> { Placeholder(Res.string.tab_plenum) }
             composable<CommitteesRoute> { Placeholder(Res.string.tab_committees) }
             composable<PeopleRoute> { Placeholder(Res.string.tab_people) }

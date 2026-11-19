@@ -6,6 +6,8 @@ import com.chencohensolutions.knesset.core.odata.ODataClient
 import com.chencohensolutions.knesset.data.repo.Api
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.MockEngineConfig
+import kotlinx.coroutines.CoroutineDispatcher
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.HttpRequestData
@@ -53,9 +55,15 @@ class FakeClock(var now: Instant = Instant.parse("2026-11-19T10:00:00Z")) : Cloc
 fun testApi(
     store: HttpCacheStore = MemoryCacheStore(),
     clock: Clock = FakeClock(),
+    /** Pass the test dispatcher so virtual time also waits for the engine. */
+    dispatcher: CoroutineDispatcher? = null,
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
 ): Api {
-    val client = ODataClient(HttpClient(MockEngine(handler)).let { ODataClient.configure(it, "test") }, retryDelaysMs = listOf(1, 1))
+    val engine = MockEngine(MockEngineConfig().apply {
+        if (dispatcher != null) this.dispatcher = dispatcher
+        addHandler(handler)
+    })
+    val client = ODataClient(HttpClient(engine).let { ODataClient.configure(it, "test") }, retryDelaysMs = listOf(1, 1))
     return Api(CachedFetcher(client, store, clock))
 }
 

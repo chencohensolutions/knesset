@@ -79,7 +79,7 @@ class CachedFetcherTest {
             awaitComplete()
         }
         val fetched = fetcher.get(url, Ttl.LIVE)
-        assertTrue(fetched.fromCache && fetched.isStale)
+        assertTrue(fetched.fromCache && fetched.isStale && fetched.offline)
     }
 
     @Test

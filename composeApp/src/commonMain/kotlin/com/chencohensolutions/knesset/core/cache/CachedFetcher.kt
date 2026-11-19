@@ -47,8 +47,11 @@ fun <T, R> Resource<T>.map(transform: (T) -> R): Resource<R> = when (this) {
     Resource.Loading -> Resource.Loading
 }
 
-/** A body with where it came from. */
-data class Fetched(val body: String, val fromCache: Boolean, val isStale: Boolean)
+/**
+ * A body with where it came from. [isStale]: older than its time to live. [offline]: the network failed
+ * and a stale cached body was used instead.
+ */
+data class Fetched(val body: String, val fromCache: Boolean, val isStale: Boolean, val offline: Boolean = false)
 
 /** Storage behind the response cache. */
 interface HttpCacheStore {
@@ -115,18 +118,22 @@ class CachedFetcher(
         }
     }
 
-    /** One body: fresh cache, else network, else stale cache. Throws when there is nothing at all. */
-    suspend fun get(url: String, ttl: Ttl, force: Boolean = false): Fetched {
+    /**
+     * One body: fresh cache, else network, else stale cache. Throws when there is nothing at all.
+     * With [preferCache] any cached body is returned at once, stale or not (the first half of
+     * stale-while-revalidate); [Fetched.isStale] tells the caller to revalidate.
+     */
+    suspend fun get(url: String, ttl: Ttl, force: Boolean = false, preferCache: Boolean = false): Fetched {
         val cached = store.get(url)
         val now = clock.now().toEpochMilliseconds()
         val stale = cached != null && now - cached.second > ttl.duration.inWholeMilliseconds
-        if (cached != null && !stale && !force) return Fetched(cached.first, fromCache = true, isStale = false)
+        if (cached != null && !force && (!stale || preferCache)) return Fetched(cached.first, fromCache = true, isStale = stale)
         return try {
             val body = client.getText(url)
             store.put(url, body, clock.now().toEpochMilliseconds())
             Fetched(body, fromCache = false, isStale = false)
         } catch (e: KnessetError) {
-            if (cached != null && e !is KnessetError.NotFound) Fetched(cached.first, fromCache = true, isStale = true) else throw e
+            if (cached != null && e !is KnessetError.NotFound) Fetched(cached.first, fromCache = true, isStale = true, offline = true) else throw e
         }
     }
 

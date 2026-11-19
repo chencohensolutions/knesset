@@ -1,0 +1,91 @@
+package com.chencohensolutions.knesset.ui.detail
+
+import com.chencohensolutions.knesset.domain.Doc
+import com.chencohensolutions.knesset.domain.VoteTally
+import com.chencohensolutions.knesset.ui.Kind
+import org.jetbrains.compose.resources.StringResource
+import kotlin.time.Instant
+
+/** Everything a detail screen shows, built in the data layer and rendered by one composable. */
+data class DetailContent(
+    val kind: Kind?,
+    val id: Int,
+    val title: String,
+    val status: String? = null,
+    val subtitle: String? = null,
+    val sections: List<Section> = emptyList(),
+    /** Optional tabs below the header; each has its own sections (member detail). */
+    val tabs: List<DetailTab> = emptyList(),
+    val webUrl: String? = null,
+    val shareUrl: String? = null,
+    val lastUpdated: Instant? = null,
+    /** Short text stored with a favorite. */
+    val favoriteSubtitle: String? = null,
+)
+
+data class DetailTab(val title: StringResource, val sections: List<Section>)
+
+data class Fact(val label: StringResource, val value: String, val route: Any? = null, val url: String? = null)
+
+data class LinkItem(
+    val title: String,
+    val subtitle: String? = null,
+    val route: Any? = null,
+    val url: String? = null,
+    val initials: String? = null,
+    val status: String? = null,
+)
+
+data class ActionLink(val label: StringResource, val url: String)
+
+sealed interface Section {
+    val title: StringResource?
+    val isEmpty: Boolean
+
+    data class Facts(override val title: StringResource?, val facts: List<Fact>) : Section {
+        override val isEmpty get() = facts.isEmpty()
+    }
+
+    data class Text(override val title: StringResource?, val text: String?) : Section {
+        override val isEmpty get() = text.isNullOrBlank()
+    }
+
+    data class Links(override val title: StringResource?, val items: List<LinkItem>, val countInTitle: Boolean = true) : Section {
+        override val isEmpty get() = items.isEmpty()
+    }
+
+    /** Items in named groups, with an optional second grouping the user can switch to. */
+    data class Groups(
+        override val title: StringResource?,
+        val groups: List<Pair<String, List<LinkItem>>>,
+        val alternateLabel: StringResource? = null,
+        val alternate: List<Pair<String, List<LinkItem>>> = emptyList(),
+        val primaryLabel: StringResource? = null,
+    ) : Section {
+        override val isEmpty get() = groups.isEmpty()
+    }
+
+    data class Documents(override val title: StringResource?, val docs: List<Doc>) : Section {
+        override val isEmpty get() = docs.isEmpty()
+    }
+
+    data class Tally(override val title: StringResource?, val tally: VoteTally) : Section {
+        override val isEmpty get() = tally.total == 0
+    }
+
+    data class Actions(override val title: StringResource?, val links: List<ActionLink>) : Section {
+        override val isEmpty get() = links.isEmpty()
+    }
+}
+
+fun factsOf(vararg facts: Fact?): List<Fact> = facts.filterNotNull().filter { it.value.isNotBlank() }
+
+fun fact(label: StringResource, value: Any?, route: Any? = null, url: String? = null): Fact? {
+    val text = when (value) {
+        null -> null
+        is Boolean -> null
+        is Instant -> com.chencohensolutions.knesset.core.odata.IsraelTime.dateTime(value)
+        else -> value.toString().trim().takeIf { it.isNotEmpty() && it != "-1" }
+    } ?: return null
+    return Fact(label, text, route, url)
+}
