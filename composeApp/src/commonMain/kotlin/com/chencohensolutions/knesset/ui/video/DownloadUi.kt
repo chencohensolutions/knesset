@@ -59,11 +59,14 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
-fun formatBytes(bytes: Long): String = when {
-    bytes >= 1_000_000_000 -> ((bytes / 100_000_000) / 10.0).toString() + " GB"
-    bytes >= 1_000_000 -> (bytes / 1_000_000).toString() + " MB"
-    else -> ((bytes / 1_000).coerceAtLeast(1)).toString() + " KB"
-}
+/** "424 MB", isolated left to right so the unit stays after the number inside Hebrew text. */
+fun formatBytes(bytes: Long): String = com.chencohensolutions.knesset.domain.Bidi.ltr(
+    when {
+        bytes >= 1_000_000_000 -> ((bytes / 100_000_000) / 10.0).toString() + " GB"
+        bytes >= 1_000_000 -> (bytes / 1_000_000).toString() + " MB"
+        else -> ((bytes / 1_000).coerceAtLeast(1)).toString() + " KB"
+    },
+)
 
 @Composable
 fun failureText(f: DownloadFailure?): String = when (f) {
@@ -195,30 +198,36 @@ fun DownloadsScreen() {
 
 @Composable
 private fun DownloadCard(item: DownloadItem, downloads: VideoDownloads, play: (String) -> Unit) {
+    val c = AppTheme.colors
     AppCard(Modifier.fillMaxWidth().animateContentSize(), onClick = item.fileUri?.takeIf { item.state == DownloadState.DONE }?.let { { play(it) } }) {
-        Row(Modifier.padding(Space.m), horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
-            VideoThumb(Modifier.size(width = 96.dp, height = 54.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                DataText(item.title, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
-                val c = AppTheme.colors
-                when (item.state) {
-                    DownloadState.DONE -> Text(listOfNotNull(stringResource(Res.string.dl_done), item.bytes?.let(::formatBytes)).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = c.positive)
-                    DownloadState.RUNNING -> LinearProgressIndicator({ item.progress / 100f }, Modifier.fillMaxWidth(), color = AppTheme.accent)
-                    DownloadState.QUEUED -> Text(stringResource(Res.string.dl_queued), style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
-                    DownloadState.FAILED -> Text(failureText(item.failure), style = MaterialTheme.typography.labelMedium, color = c.negative)
-                    DownloadState.CANCELED -> Text(stringResource(Res.string.dl_canceled), style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
+        Column(Modifier.padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
+                VideoThumb(Modifier.size(width = 96.dp, height = 54.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    DataText(item.title, maxLines = 3, style = MaterialTheme.typography.bodyMedium)
+                    when (item.state) {
+                        DownloadState.DONE -> Text(listOfNotNull(stringResource(Res.string.dl_done), item.bytes?.let(::formatBytes)).joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = c.positive)
+                        DownloadState.RUNNING -> Text(stringResource(Res.string.dl_progress, item.progress), style = MaterialTheme.typography.labelMedium, color = AppTheme.accent)
+                        DownloadState.QUEUED -> Text(stringResource(Res.string.dl_queued), style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
+                        DownloadState.FAILED -> Text(failureText(item.failure), style = MaterialTheme.typography.labelMedium, color = c.negative)
+                        DownloadState.CANCELED -> Text(stringResource(Res.string.dl_canceled), style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
+                    }
                 }
             }
-            when (item.state) {
-                DownloadState.DONE -> {
-                    IconButton(onClick = { item.fileUri?.let(play) }) { Icon(Icons.Outlined.PlayArrow, stringResource(Res.string.play)) }
-                    IconButton(onClick = { downloads.openExternally(item.url) }) { Icon(Icons.Outlined.PhotoLibrary, stringResource(Res.string.dl_open_gallery)) }
-                    IconButton(onClick = { downloads.delete(item.url) }) { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete)) }
-                }
-                DownloadState.RUNNING, DownloadState.QUEUED -> IconButton(onClick = { downloads.cancel(item.url) }) { Icon(Icons.Outlined.Close, stringResource(Res.string.cancel)) }
-                else -> {
-                    IconButton(onClick = { downloads.start(item.url, item.title, item.estimatedBytes) }) { Icon(Icons.Outlined.Refresh, stringResource(Res.string.retry)) }
-                    IconButton(onClick = { downloads.delete(item.url) }) { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete)) }
+            if (item.state == DownloadState.RUNNING) LinearProgressIndicator({ item.progress / 100f }, Modifier.fillMaxWidth(), color = AppTheme.accent)
+            // Actions on their own row, so the title keeps its width.
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
+                when (item.state) {
+                    DownloadState.DONE -> {
+                        TextButton(onClick = { item.fileUri?.let(play) }) { Icon(Icons.Outlined.PlayArrow, null); Text(" " + stringResource(Res.string.play)) }
+                        TextButton(onClick = { downloads.openExternally(item.url) }) { Icon(Icons.Outlined.PhotoLibrary, null); Text(" " + stringResource(Res.string.dl_open_gallery)) }
+                        IconButton(onClick = { downloads.delete(item.url) }) { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete), tint = c.negative) }
+                    }
+                    DownloadState.RUNNING, DownloadState.QUEUED -> TextButton(onClick = { downloads.cancel(item.url) }) { Icon(Icons.Outlined.Close, null); Text(" " + stringResource(Res.string.cancel)) }
+                    else -> {
+                        TextButton(onClick = { downloads.start(item.url, item.title, item.estimatedBytes) }) { Icon(Icons.Outlined.Refresh, null); Text(" " + stringResource(Res.string.retry)) }
+                        IconButton(onClick = { downloads.delete(item.url) }) { Icon(Icons.Outlined.Delete, stringResource(Res.string.delete), tint = c.negative) }
+                    }
                 }
             }
         }

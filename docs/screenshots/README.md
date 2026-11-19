@@ -58,3 +58,39 @@ Performance and states
 - Home, member detail and member videos show only a spinner for several seconds on first load; there are no skeleton rows.
 - The first scroll on a sitting page can stall while sections are still arriving.
 - Transitions are the navigation library defaults (fade); there is no directional slide matching RTL.
+
+# After the redesign (`redesign/`)
+
+Captured from the redesign build (R1 to R5) on the same emulator, live API. File names match the "before" set where the screen exists in both, so the two can be compared side by side. New names: `04-bills-filter-sheet-open` (filters moved to a bottom sheet), `57-downloads`, `95` to `97` at font scale 1.3.
+
+## RTL pass: what was checked
+
+- Alignment: every row, card and tile uses start and end; Hebrew data uses content direction, so it stays right-aligned inside the English UI too (91, 92, 93).
+- Mirrored as they should be: the back arrow, link arrows on fact tiles, the bill stage tracker (preliminary on the right), the Home carousel (starts on the right), pill tabs and the pager swipe, the hemicycle seat order, header gradients (start to end), filter chip rows (scroll from the right), the bottom nav order (Today on the right).
+- Not mirrored, on purpose: play, rewind and fast-forward icons, the video seek bar and time (the player is forced left to right), the "for" segment of vote bars stays at the start side.
+- Long titles ellipsize at the end side (the left in Hebrew) in collapsed headers (06, 13, 17).
+- Navigation: a forward push slides in from the left in Hebrew and back reverses it; predictive back is enabled.
+- Unit tests: `RtlAndContrastTest` covers bidi isolation, worded date ranges, hemicycle mirroring and contrast of every text and header color pair in both themes.
+
+## RTL and visual problems found, and what changed
+
+| Problem | Before | After | Fix |
+|---|---|---|---|
+| URL in the About text lost its trailing "/" to the front of the line | 56-about | redesign/56-about | URL wrapped in a left-to-right isolate (`Bidi.ltr`) |
+| Open date ranges rendered as "–11/11/2026" | 24/25-committee-detail | redesign/24, 30 | Written as "מאז 11/11/2026" / "עד 01/07/2027", dates isolated |
+| File size rendered as "MB 424" inside Hebrew | (new screen) | redesign/57-downloads | Sizes isolated left to right |
+| Explorer filter chips mixed a Latin field name with Hebrew values | 51 | redesign/51 | Field and operator isolated left to right, the value isolated by content |
+| Section tabs truncated ("הצעות לס…") | 19, 21 | redesign/11, 15 | Scrollable pill tabs, nothing truncated |
+| Typed search text invisible | 45-search-results | redesign/45 | Search moved to a pill under the header |
+| Ministries list full of "אין נתונים" rows | 41-ministries-list-placeholders | redesign/41 | Placeholder rows filtered on the server |
+| White titles on the light ends of gradients below 3:1 | n/a | all headers | A measured dark veil on headers; contrast tested |
+| Hemicycle looked scattered for small votes | (new) | redesign/12 | Rows scale with the seat count |
+
+## Still open
+
+- Ministries now start with many historical "בלי תיק" (minister without portfolio) rows, one per government. Grouping by name would need a design decision.
+- No shared-element morph from list card to detail header; the directional slide is used instead (the fallback the spec names).
+- No week strip on the session calendar yet; days are sticky headers in the list.
+- The Home "now" card is a regular card, not a live gradient card.
+- At font scale 1.3 some chips and pills truncate with an ellipsis (95); nothing is clipped.
+- Reduced motion: Compose scales all animations by the system animator duration scale, so with animations turned off they become instant; not separately verified on a device.

@@ -261,7 +261,7 @@ fun ExplorerSetScreen(name: String) {
                     }
                 }
                 items(s.filters) { f ->
-                    InputChip(selected = true, onClick = { vm.removeFilter(f) }, label = { Text("${f.field.name} ${f.op.symbol} ${f.value}") }, trailingIcon = { Icon(Icons.Filled.Clear, stringResource(Res.string.clear_all)) })
+                    InputChip(selected = true, onClick = { vm.removeFilter(f) }, label = { Text(com.chencohensolutions.knesset.domain.Bidi.ltr(f.field.name + " " + f.op.symbol) + " " + com.chencohensolutions.knesset.domain.Bidi.isolate(f.value)) }, trailingIcon = { Icon(Icons.Filled.Clear, stringResource(Res.string.clear_all)) })
                 }
             }
             p.count?.let { Text(stringResource(Res.string.results_count, it), Modifier.padding(horizontal = 16.dp), style = MaterialTheme.typography.labelMedium) }

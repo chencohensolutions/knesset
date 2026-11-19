@@ -103,7 +103,7 @@ fun AboutScreen() {
         Column(Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(Res.string.app_name), style = MaterialTheme.typography.headlineSmall)
             Text(stringResource(Res.string.about_text), style = MaterialTheme.typography.bodyLarge)
-            Text(stringResource(Res.string.about_source, "\u2066" + ODataQuery.BASE_URL + "\u2069"), style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(Res.string.about_source, com.chencohensolutions.knesset.domain.Bidi.ltr(ODataQuery.BASE_URL)), style = MaterialTheme.typography.bodyMedium)
             Text(stringResource(Res.string.about_privacy), style = MaterialTheme.typography.bodyMedium)
             HorizontalDivider()
             Text(stringResource(Res.string.about_version, info.versionName), style = MaterialTheme.typography.bodyMedium)

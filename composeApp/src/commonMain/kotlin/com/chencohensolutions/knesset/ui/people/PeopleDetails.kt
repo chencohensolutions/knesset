@@ -30,6 +30,7 @@ import com.chencohensolutions.knesset.data.repo.LookupRepo
 import com.chencohensolutions.knesset.data.repo.MemberLogic
 import com.chencohensolutions.knesset.data.repo.PeopleRepo
 import com.chencohensolutions.knesset.domain.People
+import com.chencohensolutions.knesset.domain.Bidi
 import com.chencohensolutions.knesset.resources.*
 import com.chencohensolutions.knesset.ui.BillRoute
 import com.chencohensolutions.knesset.ui.CommitteeRoute
@@ -84,9 +85,9 @@ fun dateSpan(p: PersonToPositionDto): String {
     val from = p.startDate?.let(IsraelTime::date)
     val to = p.finishDate?.let(IsraelTime::date)
     return when {
-        from != null && to != null -> "\u2068$from\u2069–\u2068$to\u2069"
-        from != null -> "מאז \u2068$from\u2069"
-        to != null -> "עד \u2068$to\u2069"
+        from != null && to != null -> Bidi.isolate(from) + "–" + Bidi.isolate(to)
+        from != null -> "מאז " + Bidi.isolate(from)
+        to != null -> "עד " + Bidi.isolate(to)
         else -> ""
     }
 }
