@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">הכנסת</string>
+    <string name="tab_home">היום</string>
+    <string name="tab_legislation">חקיקה</string>
+    <string name="tab_plenum">מליאה</string>
+    <string name="tab_committees">ועדות</string>
+    <string name="tab_people">אנשים</string>
+    <string name="settings">הגדרות</string>
+    <string name="settings_language">שפת הממשק</string>
+    <string name="language_he">עברית</string>
+    <string name="language_en">English</string>
+    <string name="settings_theme">ערכת צבעים</string>
+    <string name="theme_system">לפי המכשיר</string>
+    <string name="theme_light">בהירה</string>
+    <string name="theme_dark">כהה</string>
+    <string name="back">חזרה</string>
+    <string name="coming_soon">בקרוב</string>
+</resources>
