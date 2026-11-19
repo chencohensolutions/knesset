@@ -20,6 +20,8 @@ import com.chencohensolutions.knesset.resources.initiators
 import com.chencohensolutions.knesset.resources.joined_signers
 import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -78,6 +80,7 @@ class LegislationTest {
         assertEquals(3, state.items.size)
         assertTrue(state.items.all { it.title.contains("חינוך") })
         assertTrue(state.items.all { it.status != null }, "status resolved through KNS_Status")
+        vm.viewModelScope.cancel()
     }
 
     @Test

@@ -47,6 +47,9 @@ import com.chencohensolutions.knesset.resources.Res
 import com.chencohensolutions.knesset.resources.open_on_site
 import com.chencohensolutions.knesset.resources.share
 import com.chencohensolutions.knesset.resources.show_all_n
+import com.chencohensolutions.knesset.resources.show_all
+import com.chencohensolutions.knesset.resources.empty
+import androidx.compose.foundation.layout.Box
 import com.chencohensolutions.knesset.ui.LocalNav
 import com.chencohensolutions.knesset.ui.components.DataText
 import com.chencohensolutions.knesset.ui.components.DetailTopBar
@@ -62,6 +65,19 @@ import org.koin.compose.koinInject
 
 /** Extra top bar actions, such as the favorite star (supplied by the favorites feature). */
 typealias DetailActions = @Composable (DetailContent) -> Unit
+
+/** The detail body with its loading, error and refresh states, under any top bar. */
+@Composable
+fun DetailStateContent(vm: DetailViewModel, modifier: Modifier = Modifier) {
+    val state by vm.state.collectAsStateWithLifecycle()
+    when (val s = state) {
+        DetailState.Loading -> LoadingState(modifier.fillMaxSize())
+        is DetailState.Failed -> ErrorState(s.error, onRetry = vm::refresh, modifier = modifier.fillMaxSize())
+        is DetailState.Ready -> PullToRefreshBox(isRefreshing = s.refreshing, onRefresh = vm::refresh, modifier = modifier.fillMaxSize()) {
+            DetailBody(s.content, s.offline)
+        }
+    }
+}
 
 @Composable
 fun DetailScreen(vm: DetailViewModel, fallbackTitle: String, extraActions: DetailActions = {}) {
@@ -85,19 +101,7 @@ fun DetailScreen(vm: DetailViewModel, fallbackTitle: String, extraActions: Detai
                 }
             }
         },
-    ) { padding ->
-        when (val s = state) {
-            DetailState.Loading -> LoadingState(Modifier.padding(padding).fillMaxSize())
-            is DetailState.Failed -> ErrorState(s.error, onRetry = vm::refresh, modifier = Modifier.padding(padding).fillMaxSize())
-            is DetailState.Ready -> PullToRefreshBox(
-                isRefreshing = s.refreshing,
-                onRefresh = vm::refresh,
-                modifier = Modifier.padding(padding).fillMaxSize(),
-            ) {
-                DetailBody(s.content, s.offline)
-            }
-        }
-    }
+    ) { padding -> DetailStateContent(vm, Modifier.padding(padding)) }
 }
 
 @Composable
@@ -105,7 +109,7 @@ private fun DetailBody(c: DetailContent, offline: Boolean) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         if (offline) item { OfflineBanner() }
-        item {
+        if (c.title.isNotEmpty()) item {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DataText(c.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), itemVerticalAlignment = Alignment.CenterVertically) {
@@ -182,11 +186,21 @@ private fun SectionCard(section: Section) {
                     DataText(section.text.orEmpty(), Modifier.padding(horizontal = 16.dp, vertical = 4.dp), style = MaterialTheme.typography.bodyMedium)
                 }
                 is Section.Links -> {
-                    title?.let { SectionTitle(if (section.countInTitle) "$it (${section.items.size})" else it) }
+                    val nav = LocalNav.current
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        title?.let { Box(Modifier.weight(1f)) { SectionTitle(if (section.countInTitle && section.showAll == null) "$it (${section.items.size})" else it) } }
+                        if (section.showAll != null) TextButton(onClick = { nav.navigate(section.showAll) }) { Text(stringResource(Res.string.show_all)) }
+                    }
+                    if (section.items.isEmpty()) {
+                        Text(stringResource(Res.string.empty), Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     Collapsible(section.items.size) { limit ->
                         section.items.take(limit).forEachIndexed { i, item ->
                             if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-                            ItemRow(item.title, item.subtitle, item.status, initials = item.initials, route = item.route, url = item.url)
+                            ItemRow(
+                                item.title, item.subtitle, item.status, initials = item.initials, route = item.route, url = item.url,
+                                below = item.bar?.let { b -> { VoteBar(b.first, b.second, b.third) } },
+                            )
                         }
                     }
                 }

@@ -10,6 +10,8 @@ import com.chencohensolutions.knesset.data.repo.Api
 import com.chencohensolutions.knesset.data.repo.KnessetContext
 import com.chencohensolutions.knesset.data.repo.LookupRepo
 import com.chencohensolutions.knesset.data.repo.PeopleRepo
+import com.chencohensolutions.knesset.data.repo.FavoritesRepo
+import com.chencohensolutions.knesset.data.repo.RecentSearchRepo
 import com.chencohensolutions.knesset.db.KnessetDatabase
 import io.ktor.client.HttpClient
 import org.koin.dsl.module
@@ -28,4 +30,6 @@ val commonModule = module {
     single { LookupRepo(get()) }
     single { KnessetContext(get(), get()) }
     single { PeopleRepo(get()) }
+    single { FavoritesRepo(get(), get()) }
+    single { RecentSearchRepo(get()) }
 }

@@ -197,4 +197,18 @@
     <string name="f_note">הערה</string>
     <string name="session_page">דף הישיבה באתר</string>
     <string name="broadcast">שידור</string>
+    <string name="add_favorite">הוספה למועדפים</string>
+    <string name="remove_favorite">הסרה מהמועדפים</string>
+    <string name="show_all">הכול</string>
+    <string name="recent_searches">חיפושים אחרונים</string>
+    <string name="search_hint">חיפוש חברי כנסת, חוקים, ועדות…</string>
+    <string name="home_next_sitting">ישיבת המליאה הבאה</string>
+    <string name="home_last_sitting">ישיבת המליאה האחרונה</string>
+    <string name="home_upcoming_sessions">ישיבות ועדה קרובות</string>
+    <string name="home_last_sessions">ישיבות ועדה אחרונות</string>
+    <string name="home_latest_votes">הצבעות אחרונות</string>
+    <string name="home_recent_bills">הצעות חוק שעודכנו</string>
+    <string name="home_new_laws">חוקים חדשים</string>
+    <string name="favorites_empty">אין עדיין מועדפים. אפשר לסמן כוכב בכל הצעת חוק, חוק, חבר כנסת, ועדה או הצבעה.</string>
+    <string name="updated">עודכן</string>
 </resources>

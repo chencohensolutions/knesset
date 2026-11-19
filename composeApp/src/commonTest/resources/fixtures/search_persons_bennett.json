@@ -1,0 +1,1 @@
+{"@odata.context":"https://knesset.gov.il/OdataV4/ParliamentInfo/$metadata#KNS_Person(Id,FirstName,LastName,GenderDesc,IsCurrent)","@odata.count":2,"value":[{"Id":23511,"LastName":"בנט","FirstName":"נפתלי","GenderDesc":"זכר","IsCurrent":true},{"Id":2210,"LastName":"בנטוב","FirstName":"מרדכי","GenderDesc":"זכר","IsCurrent":false}]}

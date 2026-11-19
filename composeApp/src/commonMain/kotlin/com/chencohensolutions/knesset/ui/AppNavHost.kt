@@ -57,6 +57,10 @@ import com.chencohensolutions.knesset.ui.legislation.LawScreen
 import com.chencohensolutions.knesset.ui.legislation.LegislationScreen
 import com.chencohensolutions.knesset.ui.legislation.SecondaryLawScreen
 import androidx.navigation.toRoute
+import com.chencohensolutions.knesset.ui.home.HomeScreen
+import com.chencohensolutions.knesset.ui.favorites.FavoritesScreen
+import com.chencohensolutions.knesset.ui.search.SearchScreen
+import com.chencohensolutions.knesset.ui.components.KindListScreen
 import com.chencohensolutions.knesset.ui.committees.CommitteeScreen
 import com.chencohensolutions.knesset.ui.committees.CommitteeSessionScreen
 import com.chencohensolutions.knesset.ui.committees.CommitteesScreen
@@ -132,7 +136,7 @@ private fun MainScaffold() {
     ) { padding ->
       CompositionLocalProvider(LocalNav provides nav) {
         NavHost(nav, startDestination = HomeRoute, modifier = Modifier.padding(bottom = padding.calculateBottomPadding())) {
-            composable<HomeRoute> { Placeholder(Res.string.tab_home) }
+            composable<HomeRoute> { HomeScreen() }
             composable<LegislationRoute> { LegislationScreen() }
             composable<BillRoute> { BillScreen(it.toRoute<BillRoute>().id) }
             composable<LawRoute> { LawScreen(it.toRoute<LawRoute>().id) }
@@ -149,8 +153,9 @@ private fun MainScaffold() {
             composable<MemberRoute> { MemberScreen(it.toRoute<MemberRoute>().id) }
             composable<FactionRoute> { FactionScreen(it.toRoute<FactionRoute>().id) }
             composable<MinistryRoute> { MinistryScreen(it.toRoute<MinistryRoute>().id) }
-            composable<SearchRoute> { Placeholder(Res.string.search) }
-            composable<FavoritesRoute> { Placeholder(Res.string.favorites) }
+            composable<SearchRoute> { SearchScreen(it.toRoute<SearchRoute>().query) }
+            composable<KindListRoute> { val r = it.toRoute<KindListRoute>(); KindListScreen(r.kind, r.query) }
+            composable<FavoritesRoute> { FavoritesScreen() }
             composable<ExplorerRoute> { Placeholder(Res.string.data_explorer) }
             composable<AboutRoute> { Placeholder(Res.string.about) }
             composable<SettingsRoute> { SettingsScreen(onBack = { nav.popBackStack() }) }

@@ -34,6 +34,8 @@ data class LinkItem(
     val url: String? = null,
     val initials: String? = null,
     val status: String? = null,
+    /** for, against, abstain counts for a thin vote bar. */
+    val bar: Triple<Int, Int, Int>? = null,
 )
 
 data class ActionLink(val label: StringResource, val url: String)
@@ -50,8 +52,16 @@ sealed interface Section {
         override val isEmpty get() = text.isNullOrBlank()
     }
 
-    data class Links(override val title: StringResource?, val items: List<LinkItem>, val countInTitle: Boolean = true) : Section {
-        override val isEmpty get() = items.isEmpty()
+    data class Links(
+        override val title: StringResource?,
+        val items: List<LinkItem>,
+        val countInTitle: Boolean = true,
+        /** A "show all" destination (Home cards). */
+        val showAll: Any? = null,
+        /** Shown instead of hiding the section when it is empty. */
+        val showWhenEmpty: Boolean = false,
+    ) : Section {
+        override val isEmpty get() = items.isEmpty() && !showWhenEmpty
     }
 
     /** Items in named groups, with an optional second grouping the user can switch to. */

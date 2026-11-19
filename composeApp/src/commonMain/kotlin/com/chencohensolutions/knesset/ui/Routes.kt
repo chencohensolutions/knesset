@@ -41,8 +41,20 @@ val LocalNav = staticCompositionLocalOf<NavHostController> { error("No NavContro
 @Serializable data object AboutRoute
 
 /** Kinds of items that can be opened, starred and searched. */
-enum class Kind {
-    BILL, LAW, SECONDARY_LAW, VOTE, SITTING, MOTION, QUESTION, COMMITTEE, COMMITTEE_SESSION, MEMBER, FACTION, MINISTRY, LOBBYIST;
+enum class Kind(val entitySet: String) {
+    BILL("KNS_Bill"),
+    LAW("KNS_IsraelLaw"),
+    SECONDARY_LAW("KNS_SecondaryLaw"),
+    VOTE("KNS_PlenumVote"),
+    SITTING("KNS_PlenumSession"),
+    MOTION("KNS_Agenda"),
+    QUESTION("KNS_Query"),
+    COMMITTEE("KNS_Committee"),
+    COMMITTEE_SESSION("KNS_CommitteeSession"),
+    MEMBER("KNS_Person"),
+    FACTION("KNS_Faction"),
+    MINISTRY("KNS_GovMinistry"),
+    LOBBYIST("V_Lobbyists");
 
     fun route(id: Int): Any = when (this) {
         BILL -> BillRoute(id)
